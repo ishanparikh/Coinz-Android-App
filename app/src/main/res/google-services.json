@@ -1,0 +1,42 @@
+{
+  "project_info": {
+    "project_number": "660321757275",
+    "firebase_url": "https://myfirebaseauthapp-5a74c.firebaseio.com",
+    "project_id": "myfirebaseauthapp-5a74c",
+    "storage_bucket": "myfirebaseauthapp-5a74c.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:660321757275:android:50f730e200036209",
+        "android_client_info": {
+          "package_name": "com.example.ishan.coinzapp"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "660321757275-5n8fsqikt6esvljnu6e0lmtiqbr0d9p6.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBgwtU3qHgb7ENyE7D5y2XKie_a0Y0KijY"
+        }
+      ],
+      "services": {
+        "analytics_service": {
+          "status": 1
+        },
+        "appinvite_service": {
+          "status": 1,
+          "other_platform_oauth_client": []
+        },
+        "ads_service": {
+          "status": 2
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
