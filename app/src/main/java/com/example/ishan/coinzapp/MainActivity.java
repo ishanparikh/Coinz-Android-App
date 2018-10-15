@@ -16,7 +16,16 @@ import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.AuthResult;
 import com.google.firebase.auth.FirebaseAuth;
 import android.content.Intent;
+import android.Manifest;
 import com.google.firebase.auth.FirebaseUser;
+//import com.mapbox.mapboxsdk.maps.MapView;
+import com.mapbox.mapboxsdk.Mapbox;
+import com.mapbox.mapboxsdk.annotations.MarkerOptions;
+import com.mapbox.mapboxsdk.geometry.LatLng;
+import com.mapbox.mapboxsdk.maps.MapView;
+import com.mapbox.mapboxsdk.maps.MapboxMap;
+import com.mapbox.mapboxsdk.maps.OnMapReadyCallback;
+
 
 import org.w3c.dom.Text;
 
@@ -26,6 +35,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private EditText editTextEmail;
     private EditText editTextPassword;
     private TextView textViewSignIn;
+    private MapView mapView;
 
     private ProgressDialog progressDialog;
 
@@ -63,11 +73,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
         buttonRegister.setOnClickListener(this);
         textViewSignIn.setOnClickListener(this);
-
-
-
-
-
 
     }
 

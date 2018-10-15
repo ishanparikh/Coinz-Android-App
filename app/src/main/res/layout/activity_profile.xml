@@ -25,9 +25,16 @@
         <Button
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Logout"
+            android:text="@string/logout"
             android:id="@+id/buttonLogout"
             android:layout_gravity="center_horizontal" />
+
+        <Button
+            android:id="@+id/buttonOpenMap"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:text="@string/open_map" />
     </LinearLayout>
 
 </android.support.constraint.ConstraintLayout>
