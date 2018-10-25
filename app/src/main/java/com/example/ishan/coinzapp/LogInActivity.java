@@ -92,8 +92,6 @@ public class LogInActivity extends AppCompatActivity implements View.OnClickList
         //if validations are good, progress bar will appear
         progressDialog.setMessage("Registering User, please wait ...");
         progressDialog.show();
-
-
         //logging in the user
         firebaseAuth.signInWithEmailAndPassword(email, password)
                 .addOnCompleteListener(this, new OnCompleteListener<AuthResult>() {
