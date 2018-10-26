@@ -2,12 +2,11 @@ package com.example.ishan.coinzapp;
 
 import android.util.Log;
 
+import com.mapbox.mapboxsdk.Mapbox;
+
 public class DownloadCompleteRunner {
-    String result;
-    private String tag = "DownloadCompleteRunner";
+    static String result;
     public void downloadComplete(String result) {
         this.result = result;
     }
-     //Log.debug(tag," file downloaded" );
-
 }

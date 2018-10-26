@@ -42,6 +42,7 @@ import java.net.URL;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
 
 import com.example.ishan.coinzapp.DownloadFileTask;
 import com.example.ishan.coinzapp.DownloadCompleteRunner;
@@ -63,6 +64,7 @@ public class MapboxActivity extends AppCompatActivity implements OnMapReadyCallb
     private final String preferencesFile = "MyPrefsFile"; // for storing preferences
     private String mapLink;
     private String url;
+    DownloadFileTask urlObj = new DownloadFileTask();
 
 
 
@@ -89,50 +91,57 @@ public class MapboxActivity extends AppCompatActivity implements OnMapReadyCallb
 
             // Make location information available
             enableLocation();
-
-            DownloadFileTask urlObj = new DownloadFileTask();
-
             String pattern = "yyyy/MM/dd";
             SimpleDateFormat simpleDateFormat = new SimpleDateFormat(pattern);
             String date = simpleDateFormat.format(new Date());
+
             url = "http://homepages.inf.ed.ac.uk/stg/coinz/" + date + "/coinzmap.geojson";
             Log.d(tag,url);
-            
-            try{
+            mapLink = null;
+
+            try {
                 mapLink = urlObj.execute(url).get();
+            } catch (ExecutionException e) {
+                e.printStackTrace();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+            FeatureCollection featureCollection = FeatureCollection.fromJson(mapLink);
+            List<Feature> features = featureCollection.features();
+            for (Feature f : features) {
+                if (f.geometry() instanceof Point) {
 
+                    //List<Double> coordinates = ((Point) f.geometry()).coordinates();
+                    Point pt = (Point) f.geometry();
+                    map.addMarker(new MarkerOptions()
+                            .position(new LatLng(pt.latitude(), pt.longitude()))
 
-//                GeoJsonSource source = new GeoJsonSource("geojson", mapLink);
-//                mapboxMap.addSource(source);
-//                mapboxMap.addLayer(new LineLayer("geojson", "geojson"));
+                    );
 
-                FeatureCollection featureCollection = FeatureCollection.fromJson(mapLink);
-
-                List<Feature> features = featureCollection.features();
-
-                for (Feature f : features) {
-                    if (f.geometry() instanceof Point) {
-
-                        //List<Double> coordinates = ((Point) f.geometry()).coordinates();
-                        Point pt = (Point) f.geometry();
-                        map.addMarker(new MarkerOptions()
-                                .position(new LatLng(pt.latitude(), pt.longitude())));
-
-                    }
                 }
-
-            }catch(Exception e){
-                Toast.makeText(this, e.toString(), Toast.LENGTH_SHORT).show();
-                Log.d(tag,e.toString());
             }
 
-        }
 
-            
+        }
      }
 
-
-
+//     public void parseMap( String mapLink){
+//         FeatureCollection featureCollection = FeatureCollection.fromJson(mapLink);
+//         List<Feature> features = featureCollection.features();
+//         for (Feature f : features) {
+//             if (f.geometry() instanceof Point) {
+//
+//                 //List<Double> coordinates = ((Point) f.geometry()).coordinates();
+//                 Point pt = (Point) f.geometry();
+//                 map.addMarker(new MarkerOptions()
+//                         .position(new LatLng(pt.latitude(), pt.longitude()))
+//
+//                 );
+//
+//             }
+//         }
+//
+//     }
 
     private void enableLocation() {
         if (PermissionsManager.areLocationPermissionsGranted(this)) {

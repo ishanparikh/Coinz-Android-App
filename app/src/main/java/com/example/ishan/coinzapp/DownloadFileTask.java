@@ -1,6 +1,6 @@
 package com.example.ishan.coinzapp;
 
-import android.annotation.SuppressLint;
+
 import android.os.AsyncTask;
 import android.support.annotation.NonNull;
 
@@ -10,8 +10,8 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.util.stream.Collectors;
 
-@SuppressLint("StaticFieldLeak")
     public class DownloadFileTask extends AsyncTask<String, Void, String> {
         @Override
         protected String doInBackground(String... urls){
@@ -43,16 +43,18 @@ import java.net.URL;
         @NonNull
         private String readStream(InputStream stream)
                 throws IOException {
-            BufferedReader reader = new BufferedReader(new InputStreamReader(stream));
+            String reader = new BufferedReader(new InputStreamReader(stream)).lines().collect(Collectors.joining("\n"));;
 
-            StringBuilder sb = new StringBuilder();
-            String line = null;
-            while ((line = reader.readLine()) != null) {
-                sb.append(line);
-            }
-            reader.close();
-            return sb.toString();
-            // Read input from stream, build result as a string
+//            StringBuilder sb = new StringBuilder();
+//            String line = null;
+//            while ((line = reader.readLine()) != null) {
+//                sb.append(line).append("\n");
+//            }
+//            reader.close();
+//            return sb.toString();
+//            // Read input from stream, build result as a string
+
+            return reader;
 
         }
 
