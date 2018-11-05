@@ -3,15 +3,16 @@ package com.example.ishan.coinzapp;
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.graphics.drawable.Drawable;
 import android.location.Location;
 import android.os.AsyncTask;
 import android.os.PersistableBundle;
 import android.support.annotation.NonNull;
+import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
 import android.widget.Toast;
-
 import com.mapbox.android.core.location.LocationEngine;
 import com.mapbox.android.core.location.LocationEngineListener;
 import com.mapbox.android.core.location.LocationEnginePriority;
@@ -22,6 +23,8 @@ import com.mapbox.geojson.Feature;
 import com.mapbox.geojson.FeatureCollection;
 import com.mapbox.geojson.Point;
 import com.mapbox.mapboxsdk.Mapbox;
+import com.mapbox.mapboxsdk.annotations.Icon;
+import com.mapbox.mapboxsdk.annotations.IconFactory;
 import com.mapbox.mapboxsdk.annotations.MarkerOptions;
 import com.mapbox.mapboxsdk.annotations.MarkerViewOptions;
 import com.mapbox.mapboxsdk.camera.CameraUpdateFactory;
@@ -32,16 +35,12 @@ import com.mapbox.mapboxsdk.maps.OnMapReadyCallback;
 import com.mapbox.mapboxsdk.plugins.locationlayer.LocationLayerPlugin;
 import com.mapbox.mapboxsdk.plugins.locationlayer.modes.CameraMode;
 import com.mapbox.mapboxsdk.plugins.locationlayer.modes.RenderMode;
-
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.net.HttpURLConnection;
-import java.net.URL;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.ExecutionException;
 
 import com.example.ishan.coinzapp.DownloadFileTask;
@@ -64,9 +63,44 @@ public class MapboxActivity extends AppCompatActivity implements OnMapReadyCallb
     private final String preferencesFile = "MyPrefsFile"; // for storing preferences
     private String mapLink;
     private String url;
+    HashMap<String,TodaysMap> todaysMapList = new HashMap<String,TodaysMap>();
+    HashMap<String,TodaysMap> wallet = new HashMap<String,TodaysMap>();
     DownloadFileTask urlObj = new DownloadFileTask();
 
+    private double deg2rad(double deg) {
+        return (deg * Math.PI / 180.0);
+    }
 
+    private double rad2deg(double rad) {
+        return (rad * 180.0 / Math.PI);
+    }
+
+    public void pickUpCoin(){
+        //originLocation.distanceTo()
+        // Finding distance between markers and User
+        double usrLat = originLocation.getLatitude();
+        double usrLong = originLocation.getLongitude();
+        for (String i : todaysMapList.keySet()){
+            double markerLat = todaysMapList.get(i).loc.getLatitude();
+            double markerLong = todaysMapList.get(i).loc.getLongitude();
+            double phi1 = Math.toRadians(usrLat);
+            double phi2 = Math.toRadians(markerLat);
+            double delta = Math.toRadians(markerLong-usrLong);
+            double R = 6371e3;
+            double dist = Math.acos(Math.sin(phi1)*Math.sin(phi2) + Math.cos(phi1)* Math.cos(phi2) * Math.cos(delta)) * R;
+
+
+            if(dist <= 25){
+
+                //Add to wallet - done
+                // remove from screen
+                wallet.put(i,todaysMapList.get(i));
+
+            }
+
+            }
+
+        }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -108,40 +142,32 @@ public class MapboxActivity extends AppCompatActivity implements OnMapReadyCallb
             }
             FeatureCollection featureCollection = FeatureCollection.fromJson(mapLink);
             List<Feature> features = featureCollection.features();
+            // Create an Icon object for the marker to use
+            // Icon icon = IconFactory.getInstance(MapboxActivity.this).fromBitmap("#ffdf00");
+
             for (Feature f : features) {
-                if (f.geometry() instanceof Point) {
+
+                 TodaysMap today = new TodaysMap(date,
+                         f.properties().get("currency").toString().replaceAll("\"", ""),
+                         f.properties().get("id").toString().replaceAll("\"", ""),
+                         Double.parseDouble(f.properties().get("value").toString().replaceAll("\"", "")),
+                         new LatLng(((Point) f.geometry()).latitude(), ((Point) f.geometry()).longitude()));
+
+                 todaysMapList.put(today.id, today);
+
+                 if (f.geometry() instanceof Point) {
 
                     //List<Double> coordinates = ((Point) f.geometry()).coordinates();
                     Point pt = (Point) f.geometry();
                     map.addMarker(new MarkerOptions()
                             .position(new LatLng(pt.latitude(), pt.longitude()))
-
+                            .title( f.properties().get("currency").toString().replaceAll("\"", ""))
+                            .snippet((f.properties().get("value").toString().replaceAll("\"", "")))
                     );
-
                 }
             }
-
-
         }
      }
-
-//     public void parseMap( String mapLink){
-//         FeatureCollection featureCollection = FeatureCollection.fromJson(mapLink);
-//         List<Feature> features = featureCollection.features();
-//         for (Feature f : features) {
-//             if (f.geometry() instanceof Point) {
-//
-//                 //List<Double> coordinates = ((Point) f.geometry()).coordinates();
-//                 Point pt = (Point) f.geometry();
-//                 map.addMarker(new MarkerOptions()
-//                         .position(new LatLng(pt.latitude(), pt.longitude()))
-//
-//                 );
-//
-//             }
-//         }
-//
-//     }
 
     private void enableLocation() {
         if (PermissionsManager.areLocationPermissionsGranted(this)) {
@@ -164,8 +190,6 @@ public class MapboxActivity extends AppCompatActivity implements OnMapReadyCallb
         locationEngine.setPriority(LocationEnginePriority.HIGH_ACCURACY);
         //locationEngine.addLocationEngineListener(this);
         locationEngine.activate();
-
-
         Location lastLocation = locationEngine.getLastLocation();
         if (lastLocation != null) {
             originLocation = lastLocation;
@@ -173,7 +197,6 @@ public class MapboxActivity extends AppCompatActivity implements OnMapReadyCallb
         } else {
             locationEngine.addLocationEngineListener(this);
         }
-
     }
 
     @SuppressLint("MissingPermission")
@@ -182,8 +205,6 @@ public class MapboxActivity extends AppCompatActivity implements OnMapReadyCallb
         locationLayerPlugin.setLocationLayerEnabled(true);
         locationLayerPlugin.setCameraMode(CameraMode.TRACKING);
         locationLayerPlugin.setRenderMode(RenderMode.NORMAL);
-
-
     }
 
     private void setCameraPosition(Location location) {
@@ -195,7 +216,6 @@ public class MapboxActivity extends AppCompatActivity implements OnMapReadyCallb
     @Override
     public void onConnected() {
         locationEngine.requestLocationUpdates();
-
     }
 
     @Override
@@ -203,8 +223,8 @@ public class MapboxActivity extends AppCompatActivity implements OnMapReadyCallb
         if (location != null) {
             originLocation = location;
             setCameraPosition(location);
+            pickUpCoin();
         }
-
     }
 
 
@@ -214,10 +234,8 @@ public class MapboxActivity extends AppCompatActivity implements OnMapReadyCallb
         Context context = getApplicationContext();
         CharSequence text = "Enable Location!";
         int duration = Toast.LENGTH_SHORT;
-
         Toast toast = Toast.makeText(context, text, duration);
         toast.show();
-
     }
 
     @Override
@@ -245,15 +263,11 @@ public class MapboxActivity extends AppCompatActivity implements OnMapReadyCallb
         // use ”” as the default value (this might be the first time the app is run)
         downloadDate = settings.getString("lastDownloadDate", "");
         Log.d(tag, "[onStart] Recalled lastDownloadDate is ’" + downloadDate + "’");
-
-
         if (locationEngine != null) {
             locationEngine.requestLocationUpdates();
         }
         if (locationLayerPlugin != null)
             locationLayerPlugin.onStart();
-
-
         mapView.onStart();
 
     }
@@ -273,7 +287,6 @@ public class MapboxActivity extends AppCompatActivity implements OnMapReadyCallb
     @Override
     protected void onStop() {
         super.onStop();
-
         Log.d(tag, "[onStop] Storing lastDownloadDate of " + downloadDate);
         // All objects are from android.context.Context
         SharedPreferences settings = getSharedPreferences(preferencesFile,
@@ -297,7 +310,6 @@ public class MapboxActivity extends AppCompatActivity implements OnMapReadyCallb
     public void onSaveInstanceState(Bundle outState, PersistableBundle outPersistentState) {
         super.onSaveInstanceState(outState, outPersistentState);
         mapView.onSaveInstanceState(outState);
-
     }
 
     @Override
@@ -320,11 +332,6 @@ public class MapboxActivity extends AppCompatActivity implements OnMapReadyCallb
         //    destinationMarker = map.addMarker(new MarkerOptions().position(point));
         //    destPos = Point.fromLngLat(point.getLongitude(),point.getLatitude());
         //    origPos = Point.fromLngLat(originLocation.getLongitude(),originLocation.getLatitude());
-
     }
 
 }
-
-
-
-

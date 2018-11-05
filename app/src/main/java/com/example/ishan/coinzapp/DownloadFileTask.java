@@ -43,7 +43,7 @@ import java.util.stream.Collectors;
         @NonNull
         private String readStream(InputStream stream)
                 throws IOException {
-            String reader = new BufferedReader(new InputStreamReader(stream)).lines().collect(Collectors.joining("\n"));;
+            String reader = new BufferedReader(new InputStreamReader(stream)).lines().collect(Collectors.joining("\n"));
 
 //            StringBuilder sb = new StringBuilder();
 //            String line = null;
