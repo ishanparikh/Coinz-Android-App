@@ -35,6 +35,7 @@ import com.mapbox.mapboxsdk.maps.OnMapReadyCallback;
 import com.mapbox.mapboxsdk.plugins.locationlayer.LocationLayerPlugin;
 import com.mapbox.mapboxsdk.plugins.locationlayer.modes.CameraMode;
 import com.mapbox.mapboxsdk.plugins.locationlayer.modes.RenderMode;
+import com.mapbox.mapboxsdk.annotations.IconFactory;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -95,12 +96,11 @@ public class MapboxActivity extends AppCompatActivity implements OnMapReadyCallb
                 //Add to wallet - done
                 // remove from screen
                 wallet.put(i,todaysMapList.get(i));
-
             }
-
             }
 
         }
+        
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -163,6 +163,7 @@ public class MapboxActivity extends AppCompatActivity implements OnMapReadyCallb
                             .position(new LatLng(pt.latitude(), pt.longitude()))
                             .title( f.properties().get("currency").toString().replaceAll("\"", ""))
                             .snippet((f.properties().get("value").toString().replaceAll("\"", "")))
+
                     );
                 }
             }
