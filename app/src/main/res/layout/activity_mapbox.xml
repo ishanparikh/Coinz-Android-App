@@ -1,19 +1,69 @@
 <?xml version="1.0" encoding="utf-8"?>
 <android.support.constraint.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:mapbox="http://schemas.android.com/apk/res-auto"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     tools:context=".MapboxActivity">
 
     <com.mapbox.mapboxsdk.maps.MapView
-        android:layout_width="match_parent"
         android:id="@+id/mapView"
+        android:layout_width="match_parent"
         android:layout_height="match_parent"
         mapbox:mapbox_cameraTargetLat="55.944366"
         mapbox:mapbox_cameraTargetLng="-3.1868613"
+        mapbox:mapbox_cameraZoom="14"
         mapbox:mapbox_styleUrl="mapbox://styles/mapbox/streets-v10"
-        mapbox:mapbox_cameraZoom="12"
-        />
+        tools:layout_editor_absoluteX="25dp"
+        tools:layout_editor_absoluteY="26dp">
+
+    </com.mapbox.mapboxsdk.maps.MapView>
+
+
+    <android.support.design.widget.FloatingActionButton
+        android:id="@+id/bank"
+        android:layout_width="60dp"
+        android:layout_height="60dp"
+        app:fabCustomSize="60dp"
+        android:backgroundTint="@color/colorPrimary"
+        android:layout_gravity="bottom|right"
+        android:layout_margin="8dp"
+        android:layout_marginBottom="8dp"
+        android:layout_marginEnd="8dp"
+        android:layout_marginStart="8dp"
+        android:layout_marginTop="8dp"
+        android:src="@drawable/bank"
+        app:layout_anchorGravity="bottom|right|end"
+        mapbox:layout_constraintBottom_toBottomOf="parent"
+        mapbox:layout_constraintEnd_toEndOf="parent"
+        mapbox:layout_constraintHorizontal_bias="0.974"
+        mapbox:layout_constraintStart_toStartOf="parent"
+        mapbox:layout_constraintTop_toTopOf="parent"
+        mapbox:layout_constraintVertical_bias="0.721" />
+
+    <android.support.design.widget.FloatingActionButton
+        android:id="@+id/homepage"
+        android:layout_width="60dp"
+        android:scaleType="center"
+        app:fabCustomSize="60dp"
+        android:backgroundTint="@color/colorPrimary"
+        android:layout_height="60dp"
+        android:layout_gravity="bottom|right"
+        android:layout_margin="16dp"
+        android:layout_marginBottom="8dp"
+        android:layout_marginEnd="8dp"
+        android:layout_marginStart="8dp"
+        app:elevation="0dp"
+        android:layout_marginTop="8dp"
+        android:src="@drawable/homepage"
+        app:layout_anchorGravity="bottom|right|end"
+        mapbox:layout_constraintBottom_toBottomOf="parent"
+        mapbox:layout_constraintEnd_toEndOf="parent"
+        mapbox:layout_constraintHorizontal_bias="0.974"
+        mapbox:layout_constraintStart_toStartOf="parent"
+        mapbox:layout_constraintTop_toTopOf="@+id/mapView"
+        mapbox:layout_constraintVertical_bias="0.905" />
+
 
 </android.support.constraint.ConstraintLayout>

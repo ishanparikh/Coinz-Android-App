@@ -13,6 +13,12 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
 import android.widget.Toast;
+
+import com.google.android.gms.tasks.OnFailureListener;
+import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.firebase.firestore.DocumentReference;
+import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.SetOptions;
 import com.mapbox.android.core.location.LocationEngine;
 import com.mapbox.android.core.location.LocationEngineListener;
 import com.mapbox.android.core.location.LocationEnginePriority;
@@ -67,6 +73,8 @@ public class MapboxActivity extends AppCompatActivity implements OnMapReadyCallb
     HashMap<String,TodaysMap> todaysMapList = new HashMap<String,TodaysMap>();
     HashMap<String,TodaysMap> wallet = new HashMap<String,TodaysMap>();
     DownloadFileTask urlObj = new DownloadFileTask();
+    FirebaseFirestore db = FirebaseFirestore.getInstance();
+    private String markerColour;
 
     private double deg2rad(double deg) {
         return (deg * Math.PI / 180.0);
@@ -88,19 +96,36 @@ public class MapboxActivity extends AppCompatActivity implements OnMapReadyCallb
             double phi2 = Math.toRadians(markerLat);
             double delta = Math.toRadians(markerLong-usrLong);
             double R = 6371e3;
-            double dist = Math.acos(Math.sin(phi1)*Math.sin(phi2) + Math.cos(phi1)* Math.cos(phi2) * Math.cos(delta)) * R;
-
-
+            double dist = Math.acos(Math.sin(phi1)* Math.sin(phi2) +
+                    Math.cos(phi1) * Math.cos(phi2) * Math.cos(delta)) * R;
             if(dist <= 25){
-
                 //Add to wallet - done
                 // remove from screen
                 wallet.put(i,todaysMapList.get(i));
-            }
-            }
+                updateFirestore(i);
 
+            }
         }
-        
+    }
+
+    public void updateFirestore(String coinID){
+        //Add to FireStore
+        TodaysMap newCoin = wallet.get(coinID);
+        db.collection("Coins").document()
+                .set(newCoin, SetOptions.merge())
+                .addOnSuccessListener(new OnSuccessListener<Void>() {
+                    @Override
+                    public void onSuccess(Void aVoid) {
+                        Log.d(tag, "Coin Uploaded. DocumentSnapshot successfully written!");
+                    }
+                })
+                .addOnFailureListener(new OnFailureListener() {
+                    @Override
+                    public void onFailure(@NonNull Exception e) {
+                        Log.w(tag, "Error adding document", e);
+                    }
+                });
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -111,7 +136,6 @@ public class MapboxActivity extends AppCompatActivity implements OnMapReadyCallb
         mapView = findViewById((R.id.mapView));
         mapView.onCreate(savedInstanceState);
         mapView.getMapAsync(this);
-
     }
 
     @Override
@@ -122,17 +146,14 @@ public class MapboxActivity extends AppCompatActivity implements OnMapReadyCallb
             map = mapboxMap;
             map.getUiSettings().setCompassEnabled(true);
             map.getUiSettings().setZoomControlsEnabled(true);
-
             // Make location information available
             enableLocation();
             String pattern = "yyyy/MM/dd";
             SimpleDateFormat simpleDateFormat = new SimpleDateFormat(pattern);
             String date = simpleDateFormat.format(new Date());
-
             url = "http://homepages.inf.ed.ac.uk/stg/coinz/" + date + "/coinzmap.geojson";
             Log.d(tag,url);
             mapLink = null;
-
             try {
                 mapLink = urlObj.execute(url).get();
             } catch (ExecutionException e) {
@@ -148,22 +169,43 @@ public class MapboxActivity extends AppCompatActivity implements OnMapReadyCallb
             for (Feature f : features) {
 
                  TodaysMap today = new TodaysMap(date,
-                         f.properties().get("currency").toString().replaceAll("\"", ""),
-                         f.properties().get("id").toString().replaceAll("\"", ""),
-                         Double.parseDouble(f.properties().get("value").toString().replaceAll("\"", "")),
+                         f.getStringProperty("currency"),
+                         f.getStringProperty("id"),
+                         Double.parseDouble(f.getStringProperty("value")),
                          new LatLng(((Point) f.geometry()).latitude(), ((Point) f.geometry()).longitude()));
 
                  todaysMapList.put(today.id, today);
+                 String currCoin = f.getStringProperty("currency");
+                //String currCoin = f.properties().get("currency").toString().replaceAll("\"", "");
+                if ( currCoin.equals("SHIL")) {
+                    markerColour ="blue"+ f.getStringProperty("marker-symbol");
+                }else if(currCoin.equals("DOLR")){
+                    markerColour ="green"+f.getStringProperty("marker-symbol");;
 
-                 if (f.geometry() instanceof Point) {
+                }else if(currCoin.equals("QUID")) {
+                    markerColour = "yellow" + f.getStringProperty("marker-symbol");;
+                }else if(currCoin.equals("PENY")) {
+                    markerColour = "red" + f.getStringProperty("marker-symbol");;
+                }
+                Log.d(tag,"MarkerColour is: "+ markerColour);
 
-                    //List<Double> coordinates = ((Point) f.geometry()).coordinates();
+                int resId = this.getResources().getIdentifier(markerColour, "drawable", this.getPackageName());
+
+
+
+                if (f.geometry() instanceof Point) {
+
+
+                     //List<Double> coordinates = ((Point) f.geometry()).coordinates();
                     Point pt = (Point) f.geometry();
-                    map.addMarker(new MarkerOptions()
+//                    markerColour = f.properties().get("currency").toString().replaceAll("\"", "") +
+//                            Integer.parseInt(f.properties().get("value").toString().replaceAll("\"", ""));
+
+                     map.addMarker(new MarkerOptions()
                             .position(new LatLng(pt.latitude(), pt.longitude()))
                             .title( f.properties().get("currency").toString().replaceAll("\"", ""))
                             .snippet((f.properties().get("value").toString().replaceAll("\"", "")))
-
+                            .icon(IconFactory.getInstance(this).fromResource(resId))
                     );
                 }
             }
@@ -172,7 +214,6 @@ public class MapboxActivity extends AppCompatActivity implements OnMapReadyCallb
 
     private void enableLocation() {
         if (PermissionsManager.areLocationPermissionsGranted(this)) {
-
             Log.d(tag, "Permissions are granted");
             initializeLocationEngine();
             initializeLocationLayer();
@@ -228,7 +269,6 @@ public class MapboxActivity extends AppCompatActivity implements OnMapReadyCallb
         }
     }
 
-
     @Override
     public void onExplanationNeeded(List<String> permissionsToExplain) {
         //Present Toast/Dialogue to user to enable Location services
@@ -247,7 +287,6 @@ public class MapboxActivity extends AppCompatActivity implements OnMapReadyCallb
         } else {
             // Open a dialogue with the user
         }
-
     }
 
     @Override
@@ -270,7 +309,6 @@ public class MapboxActivity extends AppCompatActivity implements OnMapReadyCallb
         if (locationLayerPlugin != null)
             locationLayerPlugin.onStart();
         mapView.onStart();
-
     }
 
     @Override
@@ -297,7 +335,6 @@ public class MapboxActivity extends AppCompatActivity implements OnMapReadyCallb
         editor.putString("lastDownloadDate", downloadDate);
         // Apply the edits!
         editor.apply();
-
         if (locationEngine != null) {
             locationEngine.removeLocationUpdates();
         }
