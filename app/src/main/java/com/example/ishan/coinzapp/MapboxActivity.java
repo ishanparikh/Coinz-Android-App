@@ -2,18 +2,23 @@ package com.example.ishan.coinzapp;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.drawable.Drawable;
 import android.location.Location;
 import android.os.AsyncTask;
 import android.os.PersistableBundle;
 import android.support.annotation.NonNull;
+import android.support.design.widget.FloatingActionButton;
+import android.support.design.widget.Snackbar;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.View;
+import android.widget.Button;
 import android.widget.Toast;
-
+import android.content.Intent;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.firestore.DocumentReference;
@@ -31,6 +36,7 @@ import com.mapbox.geojson.Point;
 import com.mapbox.mapboxsdk.Mapbox;
 import com.mapbox.mapboxsdk.annotations.Icon;
 import com.mapbox.mapboxsdk.annotations.IconFactory;
+import com.mapbox.mapboxsdk.annotations.Marker;
 import com.mapbox.mapboxsdk.annotations.MarkerOptions;
 import com.mapbox.mapboxsdk.annotations.MarkerViewOptions;
 import com.mapbox.mapboxsdk.camera.CameraUpdateFactory;
@@ -50,13 +56,8 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 
-import com.example.ishan.coinzapp.DownloadFileTask;
-import com.example.ishan.coinzapp.DownloadCompleteRunner;
-import com.mapbox.mapboxsdk.style.layers.LineLayer;
-import com.mapbox.mapboxsdk.style.light.Position;
-import com.mapbox.mapboxsdk.style.sources.GeoJsonSource;
 
-public class MapboxActivity extends AppCompatActivity implements OnMapReadyCallback, MapboxMap.OnMapClickListener,
+public class MapboxActivity extends AppCompatActivity implements OnMapReadyCallback, MapboxMap.OnMapClickListener,View.OnClickListener,
         LocationEngineListener, PermissionsListener {
 
     private MapView mapView;
@@ -71,25 +72,64 @@ public class MapboxActivity extends AppCompatActivity implements OnMapReadyCallb
     private String mapLink;
     private String url;
     HashMap<String,TodaysMap> todaysMapList = new HashMap<String,TodaysMap>();
-    HashMap<String,TodaysMap> wallet = new HashMap<String,TodaysMap>();
+    public static HashMap<String,TodaysMap> wallet = new HashMap<String,TodaysMap>();
     DownloadFileTask urlObj = new DownloadFileTask();
     FirebaseFirestore db = FirebaseFirestore.getInstance();
     private String markerColour;
+
+    com.github.clans.fab.FloatingActionButton WalletIcon, HomeIcon;
 
     private double deg2rad(double deg) {
         return (deg * Math.PI / 180.0);
     }
 
-    private double rad2deg(double rad) {
-        return (rad * 180.0 / Math.PI);
+    public void renderMap(HashMap<String,TodaysMap> todaysMapList){
+        map.clear();
+        for (String i : todaysMapList.keySet()){
+
+            String currCoin = todaysMapList.get(i).currency;
+            //String currCoin = f.properties().get("currency").toString().replaceAll("\"", "");
+            if ( currCoin.equals("SHIL")) {
+                markerColour ="blue"+ todaysMapList.get(i).symbol;
+            }else if(currCoin.equals("DOLR")){
+                markerColour ="green"+todaysMapList.get(i).symbol;
+
+            }else if(currCoin.equals("QUID")) {
+                markerColour = "yellow" + todaysMapList.get(i).symbol;
+            }else if(currCoin.equals("PENY")) {
+                markerColour = "red" + todaysMapList.get(i).symbol;
+            }
+            Log.d(tag,"MarkerColour is: "+ markerColour);
+
+            int resId = this.getResources().getIdentifier(markerColour, "drawable", this.getPackageName());
+            map.addMarker(new MarkerOptions()
+                    .position(new LatLng(todaysMapList.get(i).loc.getLatitude(),todaysMapList.get(i).loc.getLongitude()))
+                    .title(todaysMapList.get(i).currency.toString().replaceAll("\"", ""))
+                    .snippet(String.valueOf(todaysMapList.get(i).value))
+                    .icon(IconFactory.getInstance(this).fromResource(resId))
+            );
+        }
+
     }
+
 
     public void pickUpCoin(){
         //originLocation.distanceTo()
-        // Finding distance between markers and User
+        // Finding distance between
         double usrLat = originLocation.getLatitude();
         double usrLong = originLocation.getLongitude();
+//        String rmID = "";
+//        int mapSize
+        List<String> rmID = new ArrayList<String>();
+        Set<String> keys = todaysMapList.keySet();
         for (String i : todaysMapList.keySet()){
+
+//            if (keys.contains(rmID) ){
+//                todaysMapList.remove(rmID);
+//                Log.d(tag, "New size of MapList:" +todaysMapList.size());
+//
+//            }
+
             double markerLat = todaysMapList.get(i).loc.getLatitude();
             double markerLong = todaysMapList.get(i).loc.getLongitude();
             double phi1 = Math.toRadians(usrLat);
@@ -102,9 +142,18 @@ public class MapboxActivity extends AppCompatActivity implements OnMapReadyCallb
                 //Add to wallet - done
                 // remove from screen
                 wallet.put(i,todaysMapList.get(i));
+                rmID.add(i);
                 updateFirestore(i);
-
             }
+        }
+
+        for (String i : rmID ){
+            todaysMapList.remove(i);
+            Log.d(tag, "New size of MapList:" +todaysMapList.size());
+        }
+        if(rmID.size() != 0){
+        renderMap(todaysMapList);
+
         }
     }
 
@@ -136,6 +185,28 @@ public class MapboxActivity extends AppCompatActivity implements OnMapReadyCallb
         mapView = findViewById((R.id.mapView));
         mapView.onCreate(savedInstanceState);
         mapView.getMapAsync(this);
+        WalletIcon = findViewById(R.id.WalletIcon);
+        HomeIcon = findViewById(R.id.HomeIcon);
+
+        HomeIcon.setOnClickListener(this);
+        WalletIcon.setOnClickListener(this);
+
+
+    }
+
+    public void onClick(View view)
+    {
+        if(view == WalletIcon){
+            Toast.makeText(MapboxActivity.this,"WalletIcon",Toast.LENGTH_SHORT).show();
+            startActivity(new Intent(this, WalletActivity.class));
+        }
+
+        if(view == HomeIcon)
+        {
+            Toast.makeText(MapboxActivity.this,"HomeIcon ",Toast.LENGTH_SHORT).show();
+            startActivity(new Intent(this, ProfileActivity.class));
+        }
+
     }
 
     @Override
@@ -172,7 +243,8 @@ public class MapboxActivity extends AppCompatActivity implements OnMapReadyCallb
                          f.getStringProperty("currency"),
                          f.getStringProperty("id"),
                          Double.parseDouble(f.getStringProperty("value")),
-                         new LatLng(((Point) f.geometry()).latitude(), ((Point) f.geometry()).longitude()));
+                         new LatLng(((Point) f.geometry()).latitude(), ((Point) f.geometry()).longitude()),
+                         f.getStringProperty("marker-symbol"));
 
                  todaysMapList.put(today.id, today);
                  String currCoin = f.getStringProperty("currency");
@@ -191,15 +263,13 @@ public class MapboxActivity extends AppCompatActivity implements OnMapReadyCallb
 
                 int resId = this.getResources().getIdentifier(markerColour, "drawable", this.getPackageName());
 
-
-
                 if (f.geometry() instanceof Point) {
-
 
                      //List<Double> coordinates = ((Point) f.geometry()).coordinates();
                     Point pt = (Point) f.geometry();
 //                    markerColour = f.properties().get("currency").toString().replaceAll("\"", "") +
 //                            Integer.parseInt(f.properties().get("value").toString().replaceAll("\"", ""));
+
 
                      map.addMarker(new MarkerOptions()
                             .position(new LatLng(pt.latitude(), pt.longitude()))
@@ -207,6 +277,9 @@ public class MapboxActivity extends AppCompatActivity implements OnMapReadyCallb
                             .snippet((f.properties().get("value").toString().replaceAll("\"", "")))
                             .icon(IconFactory.getInstance(this).fromResource(resId))
                     );
+
+//                    Log.d(tag,"Displaying: "+count+ map.getMarkers().toString());
+//                    count +=1;
                 }
             }
         }
