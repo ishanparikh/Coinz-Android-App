@@ -361,42 +361,45 @@ public class MapboxActivity extends AppCompatActivity implements OnMapReadyCallb
                          f.getStringProperty("marker-symbol"));
 
                  todaysMapList.put(today.id, today);
-                 String currCoin = f.getStringProperty("currency");
-                //String currCoin = f.properties().get("currency").toString().replaceAll("\"", "");
-                if ( currCoin.equals("SHIL")) {
-                    markerColour ="blue"+ f.getStringProperty("marker-symbol");
-                }else if(currCoin.equals("DOLR")){
-                    markerColour ="green"+f.getStringProperty("marker-symbol");;
+//                 String currCoin = f.getStringProperty("currency");
+//                //String currCoin = f.properties().get("currency").toString().replaceAll("\"", "");
+//                if ( currCoin.equals("SHIL")) {
+//                    markerColour ="blue"+ f.getStringProperty("marker-symbol");
+//                }else if(currCoin.equals("DOLR")){
+//                    markerColour ="green"+f.getStringProperty("marker-symbol");;
+//
+//                }else if(currCoin.equals("QUID")) {
+//                    markerColour = "yellow" + f.getStringProperty("marker-symbol");;
+//                }else if(currCoin.equals("PENY")) {
+//                    markerColour = "red" + f.getStringProperty("marker-symbol");;
+//                }
+//                Log.d(tag,"MarkerColour is: "+ markerColour);
+//
+//                int resId = this.getResources().getIdentifier(markerColour, "drawable", this.getPackageName());
+//
+//                if (f.geometry() instanceof Point) {
+//
+//                     //List<Double> coordinates = ((Point) f.geometry()).coordinates();
+//                    Point pt = (Point) f.geometry();
+////                    markerColour = f.properties().get("currency").toString().replaceAll("\"", "") +
+////                    Integer.parseInt(f.properties().get("value").toString().replaceAll("\"", ""));
+//
+//
+//                     map.addMarker(new MarkerOptions()
+//                            .position(new LatLng(pt.latitude(), pt.longitude()))
+//                            .title( f.properties().get("currency").toString().replaceAll("\"", ""))
+//                            .snippet((f.properties().get("value").toString().replaceAll("\"", "")))
+//                            .icon(IconFactory.getInstance(this).fromResource(resId))
+//                    );
+//
+////                    Log.d(tag,"Displaying: "+count+ map.getMarkers().toString());
+////                    count +=1;
+//                }
 
-                }else if(currCoin.equals("QUID")) {
-                    markerColour = "yellow" + f.getStringProperty("marker-symbol");;
-                }else if(currCoin.equals("PENY")) {
-                    markerColour = "red" + f.getStringProperty("marker-symbol");;
-                }
-                Log.d(tag,"MarkerColour is: "+ markerColour);
-
-                int resId = this.getResources().getIdentifier(markerColour, "drawable", this.getPackageName());
-
-                if (f.geometry() instanceof Point) {
-
-                     //List<Double> coordinates = ((Point) f.geometry()).coordinates();
-                    Point pt = (Point) f.geometry();
-//                    markerColour = f.properties().get("currency").toString().replaceAll("\"", "") +
-//                    Integer.parseInt(f.properties().get("value").toString().replaceAll("\"", ""));
 
 
-                     map.addMarker(new MarkerOptions()
-                            .position(new LatLng(pt.latitude(), pt.longitude()))
-                            .title( f.properties().get("currency").toString().replaceAll("\"", ""))
-                            .snippet((f.properties().get("value").toString().replaceAll("\"", "")))
-                            .icon(IconFactory.getInstance(this).fromResource(resId))
-                    );
-
-//                    Log.d(tag,"Displaying: "+count+ map.getMarkers().toString());
-//                    count +=1;
-                }
             }
-//            renderMap(todaysMapList);
+            renderMap(todaysMapList);
             SharedPreferences settings = getSharedPreferences(preferencesFile,
                     Context.MODE_PRIVATE);
             // We need an Editor object to make preference changes.

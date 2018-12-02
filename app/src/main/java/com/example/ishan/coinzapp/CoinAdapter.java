@@ -70,7 +70,7 @@ public class CoinAdapter extends RecyclerView.Adapter<CoinAdapter.MyViewHolder> 
         });
 
     }
-    public void bankCoin(double gold, String emailID){
+    public void bankCoin(double gold, String emailID,String coinID){
         goldBank += gold;
         HashMap goldBankMap = new HashMap();
         goldBankMap.put("GoldBank",goldBank);
@@ -79,6 +79,9 @@ public class CoinAdapter extends RecyclerView.Adapter<CoinAdapter.MyViewHolder> 
                 .addOnSuccessListener(new OnSuccessListener<Void>() {
                     @Override
                     public void onSuccess(Void aVoid) {
+                        // Delete coin from Wallet
+                        deleteFromWallet(emailID,coinID);
+
                         Log.d(TAG, "DocumentSnapshot successfully updated!");
                         Log.d(TAG," Gold value: " + goldBank);
                     }
@@ -90,6 +93,23 @@ public class CoinAdapter extends RecyclerView.Adapter<CoinAdapter.MyViewHolder> 
                     }
                 });
 
+    }
+
+    public void deleteFromWallet(String emailID,String id){
+        db.collection("Users").document(emailID).collection("Wallet").document(id)
+                .delete()
+                .addOnSuccessListener(new OnSuccessListener<Void>() {
+                    @Override
+                    public void onSuccess(Void aVoid) {
+                        Log.d(TAG, "Banked coin removed from wallet"  );
+                    }
+                })
+                .addOnFailureListener(new OnFailureListener() {
+                    @Override
+                    public void onFailure(@NonNull Exception e) {
+                        Log.w(TAG, "Error deleting document", e);
+                    }
+                });
     }
 
 
@@ -176,11 +196,20 @@ public class CoinAdapter extends RecyclerView.Adapter<CoinAdapter.MyViewHolder> 
                     }
 
 ////                    double goldcoins = Double.parseDouble(holder.estGold.getText().toString());
-                    bankCoin(goldValue,userEmail);
+                    bankCoin(goldValue,userEmail,cl.id);
 
                     Log.d(TAG,"Banking Coin with Gold value: " + goldValue);
+                    coinList.remove(position);
+                    notifyItemRemoved(position);
+                    notifyItemRangeChanged(position, coinList.size());
+
+
+
+
+
+
 //                    // delete coin from wallet
-                    
+
 //                    // delete coin from recyclerView
 
 //                    Log.d(TAG,)

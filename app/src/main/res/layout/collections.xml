@@ -77,9 +77,11 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginEnd="8dp"
+        android:layout_marginStart="167dp"
         android:layout_marginTop="20dp"
-        android:text="Button"
+        android:text="GIFT"
         app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toEndOf="@+id/dateCollected"
         app:layout_constraintTop_toBottomOf="@+id/bankButton" />
 
     <Button
