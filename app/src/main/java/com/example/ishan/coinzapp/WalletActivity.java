@@ -1,57 +1,45 @@
 package com.example.ishan.coinzapp;
 
+import android.content.Context;
 import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
-import android.support.v7.widget.GridLayoutManager;
 import android.util.Log;
 import android.util.TypedValue;
 import android.view.View;
-import android.widget.AdapterView;
 
 import java.util.ArrayList;
 
-import android.os.Bundle;
-import android.support.v4.content.ContextCompat;
-import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.DefaultItemAnimator;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
-import android.view.View;
-import android.widget.Toast;
 
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.google.firebase.firestore.QuerySnapshot;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import android.content.res.Resources;
 import android.graphics.Rect;
-import android.os.Bundle;
-import android.support.design.widget.AppBarLayout;
-import android.support.design.widget.CollapsingToolbarLayout;
-import android.support.v7.app.AppCompatActivity;
-import android.support.v7.widget.DefaultItemAnimator;
-import android.support.v7.widget.GridLayoutManager;
-import android.support.v7.widget.RecyclerView;
-import android.support.v7.widget.Toolbar;
+import android.widget.Button;
 
-import static com.mapbox.android.gestures.Utils.dpToPx;
-
-public class WalletActivity extends AppCompatActivity {
+public class WalletActivity extends AppCompatActivity   {
     private RecyclerView recyclerView;
     private CoinAdapter coinAdapter;
     FirebaseFirestore db = FirebaseFirestore.getInstance();
     public static List<Wallet> coinList = new ArrayList<>();
     private String TAG = "WalletActivity.java";
+    private FirebaseUser user;
 
 
-    public List<Wallet> getData() {
-        db.collection("Coins")
+    public void getData() {
+
+         db.collection("Users").document(user.getEmail()).collection("Wallet")
                 .get()
                 .addOnCompleteListener(new OnCompleteListener<QuerySnapshot>() {
                     @Override
@@ -66,29 +54,29 @@ public class WalletActivity extends AppCompatActivity {
                                 Wallet coin = new Wallet(date, curr,document.getId(),vals);
                                 coinList.add(coin);
                             }
+                            coinAdapter = new CoinAdapter(coinList, getApplicationContext());
+                            recyclerView.setAdapter(coinAdapter);
                         } else {
                             Log.d(TAG, "Error getting documents: ", task.getException());
                         }
                     }
                 });
-        return coinList;
+
     }
 
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        user = FirebaseAuth.getInstance().getCurrentUser();
         setContentView(R.layout.activity_wallet);
         recyclerView = (RecyclerView) findViewById(R.id.recycler_view);
-        RecyclerView.LayoutManager mLayoutManager = new GridLayoutManager(this, 2);
+        RecyclerView.LayoutManager mLayoutManager = new LinearLayoutManager(this);
         recyclerView.setLayoutManager(mLayoutManager);
-        recyclerView.addItemDecoration(new GridSpacingItemDecoration(2, dpToPx(10), true));
+//        recyclerView.addItemDecoration(new GridSpacingItemDecoration(, dpToPx(10), true));
         recyclerView.setItemAnimator(new DefaultItemAnimator());
 
-        List<Wallet> cl = getData();
-        coinAdapter = new CoinAdapter(cl);
-        recyclerView.setAdapter(coinAdapter);
-
+        getData();
 
 //        coinAdapter = new CoinAdapter(cl);
 //        RecyclerView.LayoutManager mLayoutManager = new LinearLayoutManager(getApplicationContext());

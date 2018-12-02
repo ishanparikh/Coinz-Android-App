@@ -1,58 +1,96 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<android.support.constraint.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/relativeLayout2"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:focusable="true"
+    android:layout_height="wrap_content"
+    android:layout_marginBottom="8dp"
+    android:layout_marginTop="8dp"
+    android:background="?android:attr/selectableItemBackground"
     android:clickable="true"
-    android:background="?android:attr/selectableItemBackground">
+    android:focusable="true">
 
-
-    public TextView  , estGold, dateCollected;
 
     <TextView
         android:id="@+id/coinCurrency"
         android:layout_width="325dp"
-        android:layout_height="41dp"
-        android:layout_alignParentLeft="true"
-        android:layout_alignParentStart="true"
-        android:layout_alignParentTop="true"
-        android:layout_marginLeft="17dp"
-        android:layout_marginStart="17dp"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="8dp"
+        android:layout_marginStart="8dp"
         android:layout_marginTop="13dp"
         android:text="Coin Currency"
-        android:textColor="@color/colorPrimaryDark"
-        android:textSize="18dp" />
+        android:textColor="#3CB371"
+        android:textSize="18dp"
+        android:textStyle="bold"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
 
     <TextView
         android:id="@+id/value"
         android:layout_width="323dp"
-        android:layout_height="46dp"
-        android:layout_alignLeft="@+id/coinCurrency"
-        android:layout_alignStart="@+id/coinCurrency"
-        android:layout_below="@+id/coinCurrency"
-        android:text="Value" />
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="8dp"
+        android:layout_marginStart="8dp"
+        android:layout_marginTop="12dp"
+        android:text="Value"
+        android:textColor="#20B2AA"
+        android:textSize="16sp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.511"
+        app:layout_constraintLeft_toLeftOf="@+id/coinCurrency"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/coinCurrency" />
 
 
     <TextView
         android:id="@+id/estGold"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_alignParentTop="true"
-        android:layout_alignStart="@+id/coinCurrency"
-        android:layout_marginTop="112dp"
+        android:layout_width="94dp"
+        android:layout_height="36dp"
+        android:layout_marginStart="28dp"
+        android:layout_marginTop="20dp"
         android:text="Gold Value"
-        android:textColor="@color/colorAccent" />
+        android:textAlignment="center"
+        android:textColor="#ffbc40"
+        android:textSize="16sp"
+        android:textStyle="bold"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/value" />
 
     <TextView
         android:id="@+id/dateCollected"
+        android:layout_width="93dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="28dp"
+        android:layout_marginTop="20dp"
+        android:text="Date Collected"
+        android:textAlignment="textStart"
+        android:textColor="#20B2AA"
+        android:textSize="16sp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/estGold" />
+
+    <Button
+        android:id="@+id/button"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_alignParentStart="true"
-        android:layout_alignTop="@+id/estGold"
-        android:layout_marginStart="103dp"
-        android:text="Date Collected" />
+        android:layout_marginEnd="8dp"
+        android:layout_marginTop="20dp"
+        android:text="Button"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/bankButton" />
+
+    <Button
+        android:id="@+id/bankButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="8dp"
+        android:layout_marginTop="20dp"
+        android:text="Bank"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/value" />
 
 
-
-</RelativeLayout>
+</android.support.constraint.ConstraintLayout>

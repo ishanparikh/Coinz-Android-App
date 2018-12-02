@@ -4,24 +4,20 @@ import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.graphics.drawable.Drawable;
 import android.location.Location;
-import android.os.AsyncTask;
+import android.net.Uri;
 import android.os.PersistableBundle;
 import android.support.annotation.NonNull;
-import android.support.design.widget.FloatingActionButton;
-import android.support.design.widget.Snackbar;
-import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
-import android.widget.Button;
 import android.widget.Toast;
-import android.content.Intent;
+
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
-import com.google.firebase.firestore.DocumentReference;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.SetOptions;
 import com.mapbox.android.core.location.LocationEngine;
@@ -34,11 +30,8 @@ import com.mapbox.geojson.Feature;
 import com.mapbox.geojson.FeatureCollection;
 import com.mapbox.geojson.Point;
 import com.mapbox.mapboxsdk.Mapbox;
-import com.mapbox.mapboxsdk.annotations.Icon;
 import com.mapbox.mapboxsdk.annotations.IconFactory;
-import com.mapbox.mapboxsdk.annotations.Marker;
 import com.mapbox.mapboxsdk.annotations.MarkerOptions;
-import com.mapbox.mapboxsdk.annotations.MarkerViewOptions;
 import com.mapbox.mapboxsdk.camera.CameraUpdateFactory;
 import com.mapbox.mapboxsdk.geometry.LatLng;
 import com.mapbox.mapboxsdk.maps.MapView;
@@ -47,7 +40,8 @@ import com.mapbox.mapboxsdk.maps.OnMapReadyCallback;
 import com.mapbox.mapboxsdk.plugins.locationlayer.LocationLayerPlugin;
 import com.mapbox.mapboxsdk.plugins.locationlayer.modes.CameraMode;
 import com.mapbox.mapboxsdk.plugins.locationlayer.modes.RenderMode;
-import com.mapbox.mapboxsdk.annotations.IconFactory;
+import org.json.JSONException;
+import org.json.JSONObject;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -68,20 +62,72 @@ public class MapboxActivity extends AppCompatActivity implements OnMapReadyCallb
     private Location originLocation;
     private LocationLayerPlugin locationLayerPlugin;
     private String downloadDate = ""; // Format: YYYY/MM/DD
+    private String date = "";// today's date
     private final String preferencesFile = "MyPrefsFile"; // for storing preferences
     private String mapLink;
     private String url;
     HashMap<String,TodaysMap> todaysMapList = new HashMap<String,TodaysMap>();
     public static HashMap<String,TodaysMap> wallet = new HashMap<String,TodaysMap>();
     DownloadFileTask urlObj = new DownloadFileTask();
-    FirebaseFirestore db = FirebaseFirestore.getInstance();
     private String markerColour;
+    FirebaseFirestore db = FirebaseFirestore.getInstance();
+    private FirebaseUser user;
+
+//    // variables for calculating and drawing a route
+//    private Point originPosition;
+//    private Point destinationPosition;
+//    private DirectionsRoute currentRoute;
+//    private NavigationMapRoute navigationMapRoute;
+
+
+    String ShilToGold;
+    String DolrToGold;
+    String QuidToGold;
+    String PenyToGold;
 
     com.github.clans.fab.FloatingActionButton WalletIcon, HomeIcon;
 
     private double deg2rad(double deg) {
         return (deg * Math.PI / 180.0);
     }
+
+//    private void getRoute(Point origin, Point destination) {
+//        NavigationRoute.builder(this)
+//                .accessToken(Mapbox.getAccessToken())
+//                .origin(origin)
+//                .destination(destination)
+//                .build()
+//                .getRoute(new Callback<DirectionsResponse>() {
+//                    @Override
+//                    public void onResponse(Call<DirectionsResponse> call, Response<DirectionsResponse> response) {
+//                        // You can get the generic HTTP info about the response
+//                        Log.d(tag, "Response code: " + response.code());
+//                        if (response.body() == null) {
+//                            Log.e(tag, "No routes found, make sure you set the right user and access token.");
+//                            return;
+//                        } else if (response.body().routes().size() < 1) {
+//                            Log.e(tag, "No routes found");
+//                            return;
+//                        }
+//
+//                        currentRoute = response.body().routes().get(0);
+//
+//                        // Draw the route on the map
+//                        if (navigationMapRoute != null) {
+//                            navigationMapRoute.removeRoute();
+//                        } else {
+//                            navigationMapRoute = new NavigationMapRoute(null, mapView, map, R.style.NavigationMapRoute);
+//                        }
+//                        navigationMapRoute.addRoute(currentRoute);
+//                    }
+//
+//                    @Override
+//                    public void onFailure(Call<DirectionsResponse> call, Throwable throwable) {
+//                        Log.e(tag, "Error: " + throwable.getMessage());
+//                    }
+//                });
+//    }
+
 
     public void renderMap(HashMap<String,TodaysMap> todaysMapList){
         map.clear();
@@ -99,7 +145,7 @@ public class MapboxActivity extends AppCompatActivity implements OnMapReadyCallb
             }else if(currCoin.equals("PENY")) {
                 markerColour = "red" + todaysMapList.get(i).symbol;
             }
-            Log.d(tag,"MarkerColour is: "+ markerColour);
+
 
             int resId = this.getResources().getIdentifier(markerColour, "drawable", this.getPackageName());
             map.addMarker(new MarkerOptions()
@@ -109,27 +155,16 @@ public class MapboxActivity extends AppCompatActivity implements OnMapReadyCallb
                     .icon(IconFactory.getInstance(this).fromResource(resId))
             );
         }
-
+        Log.d(tag,"Number of coins left: "+ todaysMapList.size());
     }
 
 
     public void pickUpCoin(){
-        //originLocation.distanceTo()
-        // Finding distance between
         double usrLat = originLocation.getLatitude();
         double usrLong = originLocation.getLongitude();
-//        String rmID = "";
-//        int mapSize
         List<String> rmID = new ArrayList<String>();
         Set<String> keys = todaysMapList.keySet();
         for (String i : todaysMapList.keySet()){
-
-//            if (keys.contains(rmID) ){
-//                todaysMapList.remove(rmID);
-//                Log.d(tag, "New size of MapList:" +todaysMapList.size());
-//
-//            }
-
             double markerLat = todaysMapList.get(i).loc.getLatitude();
             double markerLong = todaysMapList.get(i).loc.getLongitude();
             double phi1 = Math.toRadians(usrLat);
@@ -139,16 +174,15 @@ public class MapboxActivity extends AppCompatActivity implements OnMapReadyCallb
             double dist = Math.acos(Math.sin(phi1)* Math.sin(phi2) +
                     Math.cos(phi1) * Math.cos(phi2) * Math.cos(delta)) * R;
             if(dist <= 25){
-                //Add to wallet - done
-                // remove from screen
                 wallet.put(i,todaysMapList.get(i));
                 rmID.add(i);
-                updateFirestore(i);
+                updateWallet(i);
             }
         }
-
         for (String i : rmID ){
             todaysMapList.remove(i);
+            updateDailyCoinList(i);
+
             Log.d(tag, "New size of MapList:" +todaysMapList.size());
         }
         if(rmID.size() != 0){
@@ -157,40 +191,62 @@ public class MapboxActivity extends AppCompatActivity implements OnMapReadyCallb
         }
     }
 
-    public void updateFirestore(String coinID){
+    public void updateWallet(String coinID){
         //Add to FireStore
         TodaysMap newCoin = wallet.get(coinID);
-        db.collection("Coins").document()
+        db.collection("Users").document(user.getEmail()).collection("Wallet").document(coinID)
                 .set(newCoin, SetOptions.merge())
                 .addOnSuccessListener(new OnSuccessListener<Void>() {
                     @Override
                     public void onSuccess(Void aVoid) {
-                        Log.d(tag, "Coin Uploaded. DocumentSnapshot successfully written!");
+                        Log.d(tag, "Coin added to wallet, new wallet size = " + wallet.size());
                     }
                 })
                 .addOnFailureListener(new OnFailureListener() {
                     @Override
                     public void onFailure(@NonNull Exception e) {
-                        Log.w(tag, "Error adding document", e);
+                        Log.w(tag, "Error uploading coin to firestore", e);
                     }
                 });
     }
 
-    @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        Mapbox.getInstance(this, getString(R.string.access_token));
-        setContentView(R.layout.activity_mapbox);
+    public void updateDailyCoinList(String coinID){
 
-        mapView = findViewById((R.id.mapView));
-        mapView.onCreate(savedInstanceState);
-        mapView.getMapAsync(this);
-        WalletIcon = findViewById(R.id.WalletIcon);
-        HomeIcon = findViewById(R.id.HomeIcon);
+        db.collection("Users").document(user.getEmail()).collection("DailyCoinList").document(coinID)
+                .delete()
+                .addOnSuccessListener(new OnSuccessListener<Void>() {
+                    @Override
+                    public void onSuccess(Void aVoid) {
+                        Log.d(tag, "Picked up coin removed, new size: " + (50-todaysMapList.size()));
+                    }
+                })
+                .addOnFailureListener(new OnFailureListener() {
+                    @Override
+                    public void onFailure(@NonNull Exception e) {
+                        Log.w(tag, "Error deleting document", e);
+                    }
+                });
 
-        HomeIcon.setOnClickListener(this);
-        WalletIcon.setOnClickListener(this);
+    }
 
+    public void pushDailyCoinList(){
+        for (String i : todaysMapList.keySet()){
+            TodaysMap newCoin = todaysMapList.get(i);
+            db.collection("Users").document(user.getEmail()).collection("DailyCoinList").document(i)
+                    .set(newCoin, SetOptions.merge())
+                    .addOnSuccessListener(new OnSuccessListener<Void>() {
+                        @Override
+                        public void onSuccess(Void aVoid) {
+                            Log.d(tag, "Adding coin to Daily Coin List");
+                        }
+                    })
+                    .addOnFailureListener(new OnFailureListener() {
+                        @Override
+                        public void onFailure(@NonNull Exception e) {
+                            Log.w(tag, "Error adding document", e);
+                        }
+                    });
+        }
 
     }
 
@@ -210,6 +266,44 @@ public class MapboxActivity extends AppCompatActivity implements OnMapReadyCallb
     }
 
     @Override
+    protected void onCreate(Bundle savedInstanceState) {
+
+        super.onCreate(savedInstanceState);
+        Mapbox.getInstance(this, getString(R.string.access_token));
+        setContentView(R.layout.activity_mapbox);
+
+        mapView = findViewById((R.id.mapView));
+        mapView.onCreate(savedInstanceState);
+        mapView.getMapAsync(this);
+        WalletIcon = findViewById(R.id.WalletIcon);
+        HomeIcon = findViewById(R.id.HomeIcon);
+
+        HomeIcon.setOnClickListener(this);
+        WalletIcon.setOnClickListener(this);
+
+        user = FirebaseAuth.getInstance().getCurrentUser();
+        if (user != null) {
+            // Name, email address, and profile photo Url
+            String name = user.getDisplayName();
+            String email = user.getEmail();
+            Uri photoUrl = user.getPhotoUrl();
+
+            // Check if user's email is verified
+            boolean emailVerified = user.isEmailVerified();
+
+            // The user's ID, unique to the Firebase project. Do NOT use this value to
+            // authenticate with your backend server, if you have one. Use
+            // FirebaseUser.getIdToken() instead.
+            String uid = user.getUid();
+
+//            Toast.makeText(MapboxActivity.this,"Welcome " + name +email +photoUrl ,Toast.LENGTH_SHORT).show();
+//            Log.w(tag, "Welcome " + name +"\n"+email+"\n" +photoUrl);
+        }
+    }
+
+
+
+    @Override
     public void onMapReady(MapboxMap mapboxMap) {
         if (mapboxMap == null) {
             Log.d(tag, "[onMapReady] mapBox is null");
@@ -222,6 +316,7 @@ public class MapboxActivity extends AppCompatActivity implements OnMapReadyCallb
             String pattern = "yyyy/MM/dd";
             SimpleDateFormat simpleDateFormat = new SimpleDateFormat(pattern);
             String date = simpleDateFormat.format(new Date());
+//            downloadDate = date;
             url = "http://homepages.inf.ed.ac.uk/stg/coinz/" + date + "/coinzmap.geojson";
             Log.d(tag,url);
             mapLink = null;
@@ -231,11 +326,30 @@ public class MapboxActivity extends AppCompatActivity implements OnMapReadyCallb
                 e.printStackTrace();
             } catch (InterruptedException e) {
                 e.printStackTrace();
+                Log.d(tag, "Failed to build mapLink");
             }
+
+            // Get Rates
+            try {
+                JSONObject rateObj =  new JSONObject(mapLink).getJSONObject("rates");
+                ShilToGold = (rateObj.get("SHIL").toString());
+                DolrToGold = (rateObj.get("DOLR").toString());
+                QuidToGold = (rateObj.get("QUID").toString());
+                PenyToGold = (rateObj.get("PENY").toString());
+
+
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+
+
             FeatureCollection featureCollection = FeatureCollection.fromJson(mapLink);
             List<Feature> features = featureCollection.features();
+
+
             // Create an Icon object for the marker to use
             // Icon icon = IconFactory.getInstance(MapboxActivity.this).fromBitmap("#ffdf00");
+
 
             for (Feature f : features) {
 
@@ -268,7 +382,7 @@ public class MapboxActivity extends AppCompatActivity implements OnMapReadyCallb
                      //List<Double> coordinates = ((Point) f.geometry()).coordinates();
                     Point pt = (Point) f.geometry();
 //                    markerColour = f.properties().get("currency").toString().replaceAll("\"", "") +
-//                            Integer.parseInt(f.properties().get("value").toString().replaceAll("\"", ""));
+//                    Integer.parseInt(f.properties().get("value").toString().replaceAll("\"", ""));
 
 
                      map.addMarker(new MarkerOptions()
@@ -281,6 +395,21 @@ public class MapboxActivity extends AppCompatActivity implements OnMapReadyCallb
 //                    Log.d(tag,"Displaying: "+count+ map.getMarkers().toString());
 //                    count +=1;
                 }
+            }
+//            renderMap(todaysMapList);
+            SharedPreferences settings = getSharedPreferences(preferencesFile,
+                    Context.MODE_PRIVATE);
+            // We need an Editor object to make preference changes.
+            SharedPreferences.Editor editor = settings.edit();
+
+            if(downloadDate.equals(date) == false){
+                pushDailyCoinList();
+                editor.putString("DolrToGold", DolrToGold);
+                editor.putString("PenyToGold", PenyToGold);
+                editor.putString("QuidToGold", QuidToGold);
+                editor.putString("ShilToGold", ShilToGold);
+                editor.apply();
+                Log.w(tag, "Daily Map Downloaded" + downloadDate + "\t"+date );
             }
         }
      }
@@ -381,7 +510,6 @@ public class MapboxActivity extends AppCompatActivity implements OnMapReadyCallb
         }
         if (locationLayerPlugin != null)
             locationLayerPlugin.onStart();
-        mapView.onStart();
     }
 
     @Override
@@ -400,6 +528,7 @@ public class MapboxActivity extends AppCompatActivity implements OnMapReadyCallb
     protected void onStop() {
         super.onStop();
         Log.d(tag, "[onStop] Storing lastDownloadDate of " + downloadDate);
+        downloadDate = date;
         // All objects are from android.context.Context
         SharedPreferences settings = getSharedPreferences(preferencesFile,
                 Context.MODE_PRIVATE);

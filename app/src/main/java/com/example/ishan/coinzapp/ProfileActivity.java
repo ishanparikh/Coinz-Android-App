@@ -1,14 +1,19 @@
 package com.example.ishan.coinzapp;
 
+import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.content.Intent;
 import android.widget.Button;
 import android.widget.TextView;
 
+import com.google.android.gms.tasks.OnFailureListener;
+import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.firestore.FirebaseFirestore;
 
 public class ProfileActivity extends AppCompatActivity implements View.OnClickListener
 {
@@ -19,7 +24,8 @@ public class ProfileActivity extends AppCompatActivity implements View.OnClickLi
     private TextView textViewUserEmail;
     private Button buttonLogout;
     private Button buttonOpenMap;
-
+    FirebaseFirestore db = FirebaseFirestore.getInstance();
+    private String TAG = "ProfileActivity";
 
 
     @Override
@@ -49,6 +55,23 @@ public class ProfileActivity extends AppCompatActivity implements View.OnClickLi
 
         //displaying logged in user name
         textViewUserEmail.setText("Welcome "+user.getEmail());
+
+//        db.collection("Users").document(user.getEmail())
+//                .update("GoldBank", 0.0)
+//                .addOnSuccessListener(new OnSuccessListener<Void>() {
+//                    @Override
+//                    public void onSuccess(Void aVoid) {
+//                        Log.d(TAG, "Gold Bank initialised ");
+//                    }
+//                })
+//                .addOnFailureListener(new OnFailureListener() {
+//                    @Override
+//                    public void onFailure(@NonNull Exception e) {
+//                        Log.w(TAG, "Error, Gold Bank NOT initialised", e);
+//                    }
+//                });
+//
+//
 
         //adding listener to button
         buttonLogout.setOnClickListener(this);
