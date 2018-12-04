@@ -1,37 +1,28 @@
 package com.example.ishan.coinzapp;
-
+import android.annotation.SuppressLint;
 import android.content.Context;
-import android.hardware.SensorManager;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.provider.Settings;
-import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.View;
 import android.content.Intent;
 import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
-
-import com.google.android.gms.tasks.OnFailureListener;
-import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
-import com.google.firebase.firestore.FirebaseFirestore;
+
+import timber.log.Timber;
 
 public class ProfileActivity extends AppCompatActivity implements View.OnClickListener
 {
     //firebase auth object
     private FirebaseAuth firebaseAuth;
 
-    //view objects
-    private TextView textViewUserEmail;
     private Button buttonLogout;
     private Button buttonOpenMap;
-    FirebaseFirestore db = FirebaseFirestore.getInstance();
-    private String TAG = "ProfileActivity";
 
 
     public boolean haveNetworkConnection() {
@@ -39,6 +30,7 @@ public class ProfileActivity extends AppCompatActivity implements View.OnClickLi
         boolean haveConnectedMobile = false;
 
         ConnectivityManager cm = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+        assert cm != null;
         NetworkInfo[] netInfo = cm.getAllNetworkInfo();
         for (NetworkInfo ni : netInfo) {
             if (ni.getTypeName().equalsIgnoreCase("WIFI"))
@@ -52,13 +44,14 @@ public class ProfileActivity extends AppCompatActivity implements View.OnClickLi
     }
 
 
+    @SuppressLint("SetTextI18n")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_profile);
 //        sensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
         boolean networkCheck = haveNetworkConnection();
-        Log.d(TAG, "Connection Status: "+ networkCheck);
+        Timber.d("Connection Status: %s", networkCheck);
         if (!networkCheck ){
 //            ConnectionStatus iia = new ConnectionStatus(getApplicationContext());
             Toast.makeText(getBaseContext(), "Please connect to a hotspot", Toast.LENGTH_LONG).show();
@@ -81,11 +74,12 @@ public class ProfileActivity extends AppCompatActivity implements View.OnClickLi
         FirebaseUser user = firebaseAuth.getCurrentUser();
 
         //initializing views
-        textViewUserEmail = (TextView) findViewById(R.id.textViewUserEmail);
-        buttonLogout = (Button) findViewById(R.id.buttonLogout);
-        buttonOpenMap = (Button) findViewById(R.id.buttonOpenMap);
+        TextView textViewUserEmail = findViewById(R.id.textViewUserEmail);
+        buttonLogout =  findViewById(R.id.buttonLogout);
+        buttonOpenMap = findViewById(R.id.buttonOpenMap);
 
         //displaying logged in user name
+        assert user != null;
         textViewUserEmail.setText("Welcome "+user.getEmail());
 
         //adding listener to button

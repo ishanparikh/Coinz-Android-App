@@ -9,19 +9,13 @@ import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.location.Location;
-import android.net.Uri;
 import android.os.PersistableBundle;
 import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.View;
 import android.widget.Toast;
-
-import com.google.android.gms.tasks.OnCompleteListener;
-import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
-import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.DocumentSnapshot;
@@ -54,8 +48,9 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Set;
+import java.util.Objects;
 import java.util.concurrent.ExecutionException;
+import timber.log.Timber;
 
 
 public class MapboxActivity extends AppCompatActivity implements SensorEventListener,OnMapReadyCallback, MapboxMap.OnMapClickListener,View.OnClickListener,
@@ -68,13 +63,14 @@ public class MapboxActivity extends AppCompatActivity implements SensorEventList
     private LocationEngine locationEngine;
     private Location originLocation;
     private LocationLayerPlugin locationLayerPlugin;
-    private String downloadDate = ""; // Format: YYYY/MM/DD
-    public String date = "";// today's date
-    private final String preferencesFile = "MyPrefsFile"; // for storing preferences
-    private String mapLink;
-    private String url;
-    HashMap<String,TodaysMap> todaysMapList = new HashMap<String,TodaysMap>();
-    public static HashMap<String,TodaysMap> wallet = new HashMap<String,TodaysMap>();
+    // Format: YYYY/MM/DD
+    private String downloadDate = "";
+    // today's date
+    public String date = "";
+    // for storing preferences
+    private final String preferencesFile = "MyPrefsFile";
+    HashMap<String,TodaysMap> todaysMapList = new HashMap<>();
+    public static HashMap<String,TodaysMap> wallet = new HashMap<>();
     DownloadFileTask urlObj = new DownloadFileTask();
     private String markerColour;
     FirebaseFirestore db = FirebaseFirestore.getInstance();
@@ -87,49 +83,7 @@ public class MapboxActivity extends AppCompatActivity implements SensorEventList
     private SensorManager sensorManager;
     boolean activityRunning;
     public String usrDD;
-
     com.github.clans.fab.FloatingActionButton WalletIcon, HomeIcon;
-
-    private double deg2rad(double deg) {
-        return (deg * Math.PI / 180.0);
-    }
-
-//    private void getRoute(Point origin, Point destination) {
-//        NavigationRoute.builder(this)
-//                .accessToken(Mapbox.getAccessToken())
-//                .origin(origin)
-//                .destination(destination)
-//                .build()
-//                .getRoute(new Callback<DirectionsResponse>() {
-//                    @Override
-//                    public void onResponse(Call<DirectionsResponse> call, Response<DirectionsResponse> response) {
-//                        // You can get the generic HTTP info about the response
-//                        Log.d(tag, "Response code: " + response.code());
-//                        if (response.body() == null) {
-//                            Log.e(tag, "No routes found, make sure you set the right user and access token.");
-//                            return;
-//                        } else if (response.body().routes().size() < 1) {
-//                            Log.e(tag, "No routes found");
-//                            return;
-//                        }
-//
-//                        currentRoute = response.body().routes().get(0);
-//
-//                        // Draw the route on the map
-//                        if (navigationMapRoute != null) {
-//                            navigationMapRoute.removeRoute();
-//                        } else {
-//                            navigationMapRoute = new NavigationMapRoute(null, mapView, map, R.style.NavigationMapRoute);
-//                        }
-//                        navigationMapRoute.addRoute(currentRoute);
-//                    }
-//
-//                    @Override
-//                    public void onFailure(Call<DirectionsResponse> call, Throwable throwable) {
-//                        Log.e(tag, "Error: " + throwable.getMessage());
-//                    }
-//                });
-//    }
 
 
     public void renderMap(HashMap<String,TodaysMap> todaysMapList){
@@ -138,35 +92,39 @@ public class MapboxActivity extends AppCompatActivity implements SensorEventList
 
             String currCoin = todaysMapList.get(i).currency;
             //String currCoin = f.properties().get("currency").toString().replaceAll("\"", "");
-            if ( currCoin.equals("SHIL")) {
-                markerColour ="blue"+ todaysMapList.get(i).symbol;
-            }else if(currCoin.equals("DOLR")){
-                markerColour ="green"+todaysMapList.get(i).symbol;
+            switch (currCoin) {
+                case "SHIL":
+                    markerColour = "blue" + todaysMapList.get(i).symbol;
+                    break;
+                case "DOLR":
+                    markerColour = "green" + todaysMapList.get(i).symbol;
 
-            }else if(currCoin.equals("QUID")) {
-                markerColour = "yellow" + todaysMapList.get(i).symbol;
-            }else if(currCoin.equals("PENY")) {
-                markerColour = "red" + todaysMapList.get(i).symbol;
+                    break;
+                case "QUID":
+                    markerColour = "yellow" + todaysMapList.get(i).symbol;
+                    break;
+                case "PENY":
+                    markerColour = "red" + todaysMapList.get(i).symbol;
+                    break;
             }
 
 
             int resId = this.getResources().getIdentifier(markerColour, "drawable", this.getPackageName());
             map.addMarker(new MarkerOptions()
                     .position(new LatLng(todaysMapList.get(i).loc.getLatitude(),todaysMapList.get(i).loc.getLongitude()))
-                    .title(todaysMapList.get(i).currency.toString().replaceAll("\"", ""))
+                    .title(todaysMapList.get(i).currency.replaceAll("\"", ""))
                     .snippet(String.valueOf(todaysMapList.get(i).value))
                     .icon(IconFactory.getInstance(this).fromResource(resId))
             );
         }
-        Log.d(tag,"Number of coins left: "+ todaysMapList.size());
+        Timber.d("Number of coins left: %s", todaysMapList.size());
     }
 
 
     public void pickUpCoin(){
         double usrLat = originLocation.getLatitude();
         double usrLong = originLocation.getLongitude();
-        List<String> rmID = new ArrayList<String>();
-        Set<String> keys = todaysMapList.keySet();
+        List<String> rmID = new ArrayList<>();
         for (String i : todaysMapList.keySet()){
             double markerLat = todaysMapList.get(i).loc.getLatitude();
             double markerLong = todaysMapList.get(i).loc.getLongitude();
@@ -186,7 +144,7 @@ public class MapboxActivity extends AppCompatActivity implements SensorEventList
             todaysMapList.remove(i);
             updateDailyCoinList(i);
 
-            Log.d(tag, "New size of MapList:" +todaysMapList.size());
+            Timber.d("New size of MapList:%s", todaysMapList.size());
         }
         if(rmID.size() != 0){
         renderMap(todaysMapList);
@@ -200,51 +158,42 @@ public class MapboxActivity extends AppCompatActivity implements SensorEventList
         SharedPreferences.Editor editor = settings.edit();
 
         db.collection("Users").document(emailID)
-                .get().addOnCompleteListener(new OnCompleteListener<DocumentSnapshot>() {
-            @Override
-            public void onComplete(@NonNull Task<DocumentSnapshot> task) {
-                if (task.isSuccessful()) {
-                    DocumentSnapshot document = task.getResult();
-                    if (document.exists()) {
-                        usrDD = document.getString("LastDownloadDate");
-                        if(!usrDD.equals(date)){
+                .get().addOnCompleteListener(task -> {
+                    if (task.isSuccessful()) {
+                        DocumentSnapshot document = task.getResult();
+                        assert document != null;
+                        if (document.exists()) {
+                            usrDD = document.getString("LastDownloadDate");
+                            assert usrDD != null;
+                            if(!usrDD.equals(date)){
 
-                            pushDailyCoinList();
+                                pushDailyCoinList();
 
-                            HashMap<String, Object> bc = new HashMap<>();
-                            bc.put("BankCounter", 0);
-                            db.collection("Users").document(user.getEmail())
-                                    .update(bc)
-                                    .addOnSuccessListener(new OnSuccessListener<Void>() {
-                                        @Override
-                                        public void onSuccess(Void aVoid) {
-                                            Log.d(tag, "Bank counter created for new day & User Download Date updated");
+                                HashMap<String, Object> bc = new HashMap<>();
+                                bc.put("BankCounter", 0);
+                                db.collection("Users").document(Objects.requireNonNull(user.getEmail()))
+                                        .update(bc)
+                                        .addOnSuccessListener(aVoid -> {
+                                            Timber.d("Bank counter created for new day & User Download Date updated");
                                             setUserDownloadDate(emailID);
-                                        }
-                                    })
-                                    .addOnFailureListener(new OnFailureListener() {
-                                        @Override
-                                        public void onFailure(@NonNull Exception e) {
-                                            Log.w(tag, "Bank counter NOT created for new day", e);
-                                        }
-                                    });
-                            editor.putString("DolrToGold", DolrToGold);
-                            editor.putString("PenyToGold", PenyToGold);
-                            editor.putString("QuidToGold", QuidToGold);
-                            editor.putString("ShilToGold", ShilToGold);
-                            editor.apply();
-                            Log.w(tag, "Daily Map Downloaded" + downloadDate + "\t"+date );
+                                        })
+                                        .addOnFailureListener(e -> Timber.tag(tag).w(e, "Bank counter NOT created for new day"));
+                                editor.putString("DolrToGold", DolrToGold);
+                                editor.putString("PenyToGold", PenyToGold);
+                                editor.putString("QuidToGold", QuidToGold);
+                                editor.putString("ShilToGold", ShilToGold);
+                                editor.apply();
+                                Timber.tag(tag).w("Daily Map Downloaded" + downloadDate + "\t" + date);
 
+                            }
+
+                        } else {
+                            Timber.d("No such document");
                         }
-
                     } else {
-                        Log.d(tag, "No such document");
+                        Timber.d(task.getException(), "get failed with ");
                     }
-                } else {
-                    Log.d(tag, "get failed with ", task.getException());
-                }
-            }
-        });
+                });
     }
 
     public void setUserDownloadDate(String emailID){
@@ -252,75 +201,35 @@ public class MapboxActivity extends AppCompatActivity implements SensorEventList
         setDate.put("LastDownloadDate",date);
         db.collection("Users").document(emailID)
                 .update(setDate)
-                .addOnSuccessListener(new OnSuccessListener<Void>() {
-                    @Override
-                    public void onSuccess(Void aVoid) {
-                        Log.d(tag, "User Download Date updated successfully!");
-                    }
-                })
-                .addOnFailureListener(new OnFailureListener() {
-                    @Override
-                    public void onFailure(@NonNull Exception e) {
-                        Log.w(tag, "Error updating document", e);
-                    }
-                });
+                .addOnSuccessListener((OnSuccessListener<Void>) aVoid -> Timber.d("User Download Date updated successfully!"))
+                .addOnFailureListener(e -> Timber.tag(tag).w(e, "Error updating document"));
     }
 
     public void updateWallet(String coinID){
         //Add to FireStore
         TodaysMap newCoin = wallet.get(coinID);
-        db.collection("Users").document(user.getEmail()).collection("Wallet").document(coinID)
+        db.collection("Users").document(Objects.requireNonNull(user.getEmail())).collection("Wallet").document(coinID)
                 .set(newCoin, SetOptions.merge())
-                .addOnSuccessListener(new OnSuccessListener<Void>() {
-                    @Override
-                    public void onSuccess(Void aVoid) {
-                        Log.d(tag, "Coin added to wallet, new wallet size = " + wallet.size());
-                    }
-                })
-                .addOnFailureListener(new OnFailureListener() {
-                    @Override
-                    public void onFailure(@NonNull Exception e) {
-                        Log.w(tag, "Error uploading coin to firestore", e);
-                    }
-                });
+                .addOnSuccessListener(aVoid -> Timber.d("Coin added to wallet, new wallet size = %s", wallet.size()))
+                .addOnFailureListener(e -> Timber.tag(tag).w(e, "Error uploading coin to firestore"));
     }
 
     public void updateDailyCoinList(String coinID){
 
-        db.collection("Users").document(user.getEmail()).collection("DailyCoinList").document(coinID)
+        db.collection("Users").document(Objects.requireNonNull(user.getEmail())).collection("DailyCoinList").document(coinID)
                 .delete()
-                .addOnSuccessListener(new OnSuccessListener<Void>() {
-                    @Override
-                    public void onSuccess(Void aVoid) {
-                        Log.d(tag, "Picked up coin removed, new size: " + (50-todaysMapList.size()));
-                    }
-                })
-                .addOnFailureListener(new OnFailureListener() {
-                    @Override
-                    public void onFailure(@NonNull Exception e) {
-                        Log.w(tag, "Error deleting document", e);
-                    }
-                });
+                .addOnSuccessListener(aVoid -> Timber.d("Picked up coin removed, new size: %s", (50 - todaysMapList.size())))
+                .addOnFailureListener(e -> Timber.tag(tag).w(e, "Error deleting document"));
 
     }
 
     public void pushDailyCoinList(){
         for (String i : todaysMapList.keySet()){
             TodaysMap newCoin = todaysMapList.get(i);
-            db.collection("Users").document(user.getEmail()).collection("DailyCoinList").document(i)
+            db.collection("Users").document(Objects.requireNonNull(user.getEmail())).collection("DailyCoinList").document(i)
                     .set(newCoin, SetOptions.merge())
-                    .addOnSuccessListener(new OnSuccessListener<Void>() {
-                        @Override
-                        public void onSuccess(Void aVoid) {
-                            Log.d(tag, "Adding coin to Daily Coin List");
-                        }
-                    })
-                    .addOnFailureListener(new OnFailureListener() {
-                        @Override
-                        public void onFailure(@NonNull Exception e) {
-                            Log.w(tag, "Error adding document", e);
-                        }
-                    });
+                    .addOnSuccessListener(aVoid -> Timber.d("Adding coin to Daily Coin List"))
+                    .addOnFailureListener(e -> Timber.tag(tag).w(e, "Error adding document"));
         }
 
     }
@@ -357,23 +266,7 @@ public class MapboxActivity extends AppCompatActivity implements SensorEventList
         WalletIcon.setOnClickListener(this);
 
         user = FirebaseAuth.getInstance().getCurrentUser();
-        if (user != null) {
-            // Name, email address, and profile photo Url
-            String name = user.getDisplayName();
-            String email = user.getEmail();
-            Uri photoUrl = user.getPhotoUrl();
 
-            // Check if user's email is verified
-            boolean emailVerified = user.isEmailVerified();
-
-            // The user's ID, unique to the Firebase project. Do NOT use this value to
-            // authenticate with your backend server, if you have one. Use
-            // FirebaseUser.getIdToken() instead.
-            String uid = user.getUid();
-
-//            Toast.makeText(MapboxActivity.this,"Welcome " + name +email +photoUrl ,Toast.LENGTH_SHORT).show();
-//            Log.w(tag, "Welcome " + name +"\n"+email+"\n" +photoUrl);
-        }
     }
 
 
@@ -381,7 +274,7 @@ public class MapboxActivity extends AppCompatActivity implements SensorEventList
     @Override
     public void onMapReady(MapboxMap mapboxMap) {
         if (mapboxMap == null) {
-            Log.d(tag, "[onMapReady] mapBox is null");
+            Timber.d("[onMapReady] mapBox is null");
         } else {
             Sensor countSensor = sensorManager.getDefaultSensor(Sensor.TYPE_STEP_COUNTER);
             if(countSensor != null){
@@ -397,18 +290,18 @@ public class MapboxActivity extends AppCompatActivity implements SensorEventList
             // Make location information available
             enableLocation();
             String pattern = "yyyy/MM/dd";
-            SimpleDateFormat simpleDateFormat = new SimpleDateFormat(pattern);
+            @SuppressLint("SimpleDateFormat") SimpleDateFormat simpleDateFormat = new SimpleDateFormat(pattern);
             date = simpleDateFormat.format(new Date());
-            url = "http://homepages.inf.ed.ac.uk/stg/coinz/" + date + "/coinzmap.geojson";
-            Log.d(tag,url);
-            mapLink = null;
+            String url = "http://homepages.inf.ed.ac.uk/stg/coinz/" + date + "/coinzmap.geojson";
+            Timber.d(url);
+            String mapLink = null;
             try {
                 mapLink = urlObj.execute(url).get();
             } catch (ExecutionException e) {
                 e.printStackTrace();
             } catch (InterruptedException e) {
                 e.printStackTrace();
-                Log.d(tag, "Failed to build mapLink");
+                Timber.d("Failed to build mapLink");
             }
 
             // Get Rates
@@ -424,16 +317,18 @@ public class MapboxActivity extends AppCompatActivity implements SensorEventList
                 e.printStackTrace();
             }
 
+            assert mapLink != null;
             FeatureCollection featureCollection = FeatureCollection.fromJson(mapLink);
             List<Feature> features = featureCollection.features();
 
+            assert features != null;
             for (Feature f : features) {
 
                  TodaysMap today = new TodaysMap(date,
                          f.getStringProperty("currency"),
                          f.getStringProperty("id"),
                          Double.parseDouble(f.getStringProperty("value")),
-                         new LatLng(((Point) f.geometry()).latitude(), ((Point) f.geometry()).longitude()),
+                         new LatLng(((Point) Objects.requireNonNull(f.geometry())).latitude(), ((Point) Objects.requireNonNull(f.geometry())).longitude()),
                          f.getStringProperty("marker-symbol"));
 
                  todaysMapList.put(today.id, today);
@@ -520,11 +415,11 @@ public class MapboxActivity extends AppCompatActivity implements SensorEventList
 
     private void enableLocation() {
         if (PermissionsManager.areLocationPermissionsGranted(this)) {
-            Log.d(tag, "Permissions are granted");
+            Timber.d("Permissions are granted");
             initializeLocationEngine();
             initializeLocationLayer();
         } else {
-            Log.d(tag, "Permissions are not granted");
+            Timber.d("Permissions are not granted");
             permissionsManager = new PermissionsManager(this);
             permissionsManager.requestLocationPermissions(this);
         }
@@ -587,11 +482,9 @@ public class MapboxActivity extends AppCompatActivity implements SensorEventList
 
     @Override
     public void onPermissionResult(boolean granted) {
-        Log.d(tag, "[onPermissionResult] granted == " + granted);
+        Timber.d("[onPermissionResult] granted == %s", granted);
         if (granted) {
             enableLocation();
-        } else {
-            // Open a dialogue with the user
         }
     }
 
@@ -608,7 +501,7 @@ public class MapboxActivity extends AppCompatActivity implements SensorEventList
                 Context.MODE_PRIVATE);
         // use ”” as the default value (this might be the first time the app is run)
         downloadDate = settings.getString("lastDownloadDate", "");
-        Log.d(tag, "[onStart] Recalled lastDownloadDate is ’" + downloadDate + "’");
+        Timber.d("[onStart] Recalled lastDownloadDate is ’" + downloadDate + "’");
         if (locationEngine != null) {
             locationEngine.requestLocationUpdates();
         }
@@ -631,7 +524,7 @@ public class MapboxActivity extends AppCompatActivity implements SensorEventList
     @Override
     protected void onStop() {
         super.onStop();
-        Log.d(tag, "[onStop] Storing lastDownloadDate of " + downloadDate);
+        Timber.d("[onStop] Storing lastDownloadDate of %s", downloadDate);
         downloadDate = date;
         activityRunning = false;
         // All objects are from android.context.Context

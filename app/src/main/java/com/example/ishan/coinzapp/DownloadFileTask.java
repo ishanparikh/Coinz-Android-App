@@ -41,20 +41,10 @@ import java.util.stream.Collectors;
         }
 
         @NonNull
-        private String readStream(InputStream stream)
-                throws IOException {
-            String reader = new BufferedReader(new InputStreamReader(stream)).lines().collect(Collectors.joining("\n"));
+        private String readStream(InputStream stream) {
 
-//            StringBuilder sb = new StringBuilder();
-//            String line = null;
-//            while ((line = reader.readLine()) != null) {
-//                sb.append(line).append("\n");
-//            }
-//            reader.close();
-//            return sb.toString();
-//            // Read input from stream, build result as a string
 
-            return reader;
+            return new BufferedReader(new InputStreamReader(stream)).lines().collect(Collectors.joining("\n"));
 
         }
 

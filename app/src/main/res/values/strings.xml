@@ -8,4 +8,20 @@
     <string name="access_token">pk.eyJ1IjoiaXNoYW5wYXJpa2giLCJhIjoiY2puOHh6YnMyMWxsNzNwb2NueHR1Yzg4MSJ9.EL8LcRXpow2AWalA1GFjRA</string>
     <string name="logout">Logout</string>
     <string name="open_map">Open Map</string>
+    <string name="user_login">User Login</string>
+    <string name="sign_up_instead">Sign Up Instead</string>
+    <string name="enter_your_friend_s_email_id">Enter your Friend\'s Email ID</string>
+    <string name="value">Value</string>
+    <string name="gold_value">Gold Value</string>
+    <string name="date_collected">Date Collected</string>
+    <string name="coin_currency">Coin Currency</string>
+    <string name="bank">Bank</string>
+    <string name="gift">GIFT</string>
+    <string name="coins_left">Coins Left:</string>
+    <string name="storing_in">Storing In:</string>
+    <string name="backtowalletactivity">BacktoWalletActivity</string>
+    <string name="signup_below">SignUp Below</string>
+    <string name="already_registered_sign_in_here">Already Registered? Sign in here</string>
+    <string name="image_logo">Image Logo</string>
+    <string name="welcome">Welcome</string>
 </resources>

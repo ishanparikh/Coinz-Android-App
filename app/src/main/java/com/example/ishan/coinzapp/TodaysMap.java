@@ -1,10 +1,7 @@
 package com.example.ishan.coinzapp;
 
-import android.location.Location;
 
 import com.mapbox.mapboxsdk.geometry.LatLng;
-
-import java.util.Date;
 
 public class TodaysMap {
 

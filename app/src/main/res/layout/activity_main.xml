@@ -6,7 +6,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@drawable/fallingcoin">
-    tools:context=".MainActivity">
+
 
     <LinearLayout
         android:id="@+id/linearLayout"
@@ -33,7 +33,7 @@
             android:layout_gravity="center_horizontal"
             android:layout_margin="15dp"
             android:fontFamily="casual"
-            android:text="SignUp Below"
+            android:text="@string/signup_below"
             android:textAlignment="center"
             android:textAllCaps="true"
             android:textAppearance="?android:attr/textAppearanceLarge"
@@ -98,7 +98,7 @@
         android:layout_marginStart="8dp"
         android:layout_marginTop="8dp"
         android:fontFamily="casual"
-        android:text="Already Registered? Sign in here"
+        android:text="@string/already_registered_sign_in_here"
         android:textAlignment="center"
         android:textAllCaps="true"
         android:textColor="@android:color/background_light"
@@ -117,7 +117,9 @@
         android:layout_height="wrap_content"
         app:srcCompat="@drawable/logo3"
         tools:layout_editor_absoluteX="0dp"
-        tools:layout_editor_absoluteY="0dp" />
+        tools:layout_editor_absoluteY="0dp"
+        tools:ignore="MissingConstraints"
+        android:contentDescription="@string/image_logo" />
 
 
 </android.support.constraint.ConstraintLayout>

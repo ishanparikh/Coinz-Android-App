@@ -16,7 +16,8 @@
         mapbox:mapbox_cameraZoom="13"
         mapbox:mapbox_styleUrl="mapbox://styles/mapbox/streets-v10"
         tools:layout_editor_absoluteX="0dp"
-        tools:layout_editor_absoluteY="0dp">
+        tools:layout_editor_absoluteY="0dp"
+        tools:ignore="MissingConstraints">
 
     </com.mapbox.mapboxsdk.maps.MapView>
 
@@ -55,7 +56,8 @@
         mapbox:layout_constraintHorizontal_bias="0.963"
         mapbox:layout_constraintStart_toStartOf="parent"
         mapbox:layout_constraintTop_toTopOf="parent"
-        mapbox:layout_constraintVertical_bias="0.978">
+        mapbox:layout_constraintVertical_bias="0.978"
+        tools:ignore="RtlHardcoded">
 
         <com.github.clans.fab.FloatingActionButton
             android:id="@+id/WalletIcon"

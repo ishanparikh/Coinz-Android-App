@@ -14,9 +14,10 @@
         android:layout_marginTop="44dp"
         android:ems="10"
         android:inputType="textPersonName"
-        android:hint="Enter your Friend's Email ID"
+        android:hint="@string/enter_your_friend_s_email_id"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintTop_toTopOf="parent"
+        tools:ignore="TextFields" />
 
 </android.support.constraint.ConstraintLayout>

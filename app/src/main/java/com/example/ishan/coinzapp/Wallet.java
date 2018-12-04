@@ -1,6 +1,5 @@
 package com.example.ishan.coinzapp;
 
-import java.util.Date;
 
 public class Wallet {
     String date;

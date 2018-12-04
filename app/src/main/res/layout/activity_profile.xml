@@ -15,7 +15,8 @@
         android:layout_centerHorizontal="true"
         android:layout_centerVertical="true"
         tools:layout_editor_absoluteX="0dp"
-        tools:layout_editor_absoluteY="0dp">
+        tools:layout_editor_absoluteY="0dp"
+        tools:ignore="MissingConstraints">
 
 
         <TextView
@@ -24,10 +25,9 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
             android:fontFamily="casual"
-            android:text="Welcome"
+            android:text="@string/welcome"
             android:textAlignment="center"
             android:textAppearance="?android:attr/textAppearanceLarge"
-
             android:textColor="@android:color/background_light"
             android:textSize="20sp"
             android:textStyle="bold"

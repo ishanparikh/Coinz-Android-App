@@ -28,47 +28,47 @@ import com.google.firebase.firestore.FirebaseFirestore;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Objects;
+
+import timber.log.Timber;
 
 public class CoinAdapter extends RecyclerView.Adapter<CoinAdapter.MyViewHolder>  {
 
     private String TAG = "CoinAdapter.java";
-    FirebaseFirestore db = FirebaseFirestore.getInstance();
-    public static List<Wallet> coinList = new ArrayList<>();
-    double ShilToGold;
-    double DolrToGold;
-    double QuidToGold;
-    double PenyToGold;
-    double goldValue;
-    double goldBank;
-    double spareGold;
+    private FirebaseFirestore db = FirebaseFirestore.getInstance();
+    private static List<Wallet> coinList = new ArrayList<>();
+    private double ShilToGold ;
+    private double DolrToGold ;
+    private double QuidToGold ;
+    private double PenyToGold ;
+    private double goldValue;
+    private double goldBank;
+    private double spareGold;
     public String date;
-    public FirebaseUser user;
-    public int bankCounter;
+    private FirebaseUser user;
+    private int bankCounter;
     private final String preferencesFile = "MyPrefsFile";
-    Context obj;
+    private Context obj;
 
-    public void getBankBalance(String emailID){
+    private void getBankBalance(String emailID){
         db.collection("Users").document(emailID)
-                .get().addOnCompleteListener(new OnCompleteListener<DocumentSnapshot>() {
-            @Override
-            public void onComplete(@NonNull Task<DocumentSnapshot> task) {
-                if (task.isSuccessful()) {
-                    DocumentSnapshot document = task.getResult();
-                    if (document.exists()) {
-                        goldBank = document.getDouble("GoldBank");
-                        spareGold = document.getDouble("SpareGold");
-                        Log.d(TAG, "DocumentSnapshot data: " + document.getData());
-                        Log.d(TAG,"GoldBank Value: "+ goldBank);
-                        Log.d(TAG,"SpareGold Value: "+ spareGold);
+                .get().addOnCompleteListener(task -> {
+                    if (task.isSuccessful()) {
+                        DocumentSnapshot document = task.getResult();
+                        if (document.exists()) {
+                            goldBank = document.getDouble("GoldBank");
+                            spareGold = document.getDouble("SpareGold");
+                            Timber.d("DocumentSnapshot data: %s", document.getData());
+                            Timber.d("GoldBank Value: %s", goldBank);
+                            Timber.d("SpareGold Value: %s", spareGold);
 
+                        } else {
+                            Timber.d("No such document");
+                        }
                     } else {
-                        Log.d(TAG, "No such document");
+                        Timber.d(task.getException(), "get failed with ");
                     }
-                } else {
-                    Log.d(TAG, "get failed with ", task.getException());
-                }
-            }
-        });
+                });
 
     }
     public void bankCoin(double gold, String emailID,String coinID,int position){
@@ -77,52 +77,36 @@ public class CoinAdapter extends RecyclerView.Adapter<CoinAdapter.MyViewHolder> 
         goldBankMap.put("GoldBank",goldBank);
         db.collection("Users").document(emailID)
                 .update(goldBankMap)
-                .addOnSuccessListener(new OnSuccessListener<Void>() {
-                    @Override
-                    public void onSuccess(Void aVoid) {
-                        // Delete coin from Wallet
-                        deleteFromWallet(emailID,coinID);
+                .addOnSuccessListener((OnSuccessListener<Void>) aVoid -> {
+                    // Delete coin from Wallet
+                    deleteFromWallet(emailID,coinID);
 
-                        coinList.remove(position);
-                        notifyItemRemoved(position);
-                        notifyItemRangeChanged(position, coinList.size());
+                    coinList.remove(position);
+                    notifyItemRemoved(position);
+                    notifyItemRangeChanged(position, coinList.size());
 
 
-                        Log.d(TAG, "DocumentSnapshot successfully updated!");
-                        Log.d(TAG," Gold value: " + goldBank);
-                    }
+                    Timber.d("DocumentSnapshot successfully updated!");
+                    Timber.d(" Gold value: %s", goldBank);
                 })
-                .addOnFailureListener(new OnFailureListener() {
-                    @Override
-                    public void onFailure(@NonNull Exception e) {
-                        Log.w(TAG, "Error updating document", e);
-                    }
-                });
+                .addOnFailureListener(e -> Timber.tag(TAG).w(e, "Error updating document"));
 
     }
 
 
-    public void depositGift(double receivedAmt, String emailID){
+    private void depositGift(double receivedAmt, String emailID){
 
         HashMap giftMap = new HashMap();
         giftMap.put("GoldBank",receivedAmt);
         db.collection("Users").document(emailID)
                 .update(giftMap)
-                .addOnSuccessListener(new OnSuccessListener<Void>() {
-                    @Override
-                    public void onSuccess(Void aVoid) {
+                .addOnSuccessListener((OnSuccessListener<Void>) aVoid -> {
 
 
-                        Log.d(TAG, "Gift has been sent successfully");
-                        Log.d(TAG," Gold value: " + receivedAmt);
-                    }
+                    Timber.d("Gift has been sent successfully");
+                    Timber.d(" Gold value: %s", receivedAmt);
                 })
-                .addOnFailureListener(new OnFailureListener() {
-                    @Override
-                    public void onFailure(@NonNull Exception e) {
-                        Log.w(TAG, "Gift has NOT been sent", e);
-                    }
-                });
+                .addOnFailureListener(e -> Timber.tag(TAG).w(e, "Gift has NOT been sent"));
 
     }
 
@@ -136,20 +120,17 @@ public class CoinAdapter extends RecyclerView.Adapter<CoinAdapter.MyViewHolder> 
         spareGoldMap.put("SpareGold",spareGold);
         db.collection("Users").document(emailID)
                 .update(spareGoldMap)
-                .addOnSuccessListener(new OnSuccessListener<Void>() {
-                    @Override
-                    public void onSuccess(Void aVoid) {
-                        // Delete coin from Wallet
-                        deleteFromWallet(emailID,coinID);
+                .addOnSuccessListener((OnSuccessListener<Void>) aVoid -> {
+                    // Delete coin from Wallet
+                    deleteFromWallet(emailID,coinID);
 
-                        Log.d(TAG, "DocumentSnapshot successfully updated!");
-                        Log.d(TAG," Gold value: " + spareGold);
-                    }
+                    Timber.d("DocumentSnapshot successfully updated!");
+                    Timber.d(" Gold value: %s", spareGold);
                 })
                 .addOnFailureListener(new OnFailureListener() {
                     @Override
                     public void onFailure(@NonNull Exception e) {
-                        Log.w(TAG, "Error updating document", e);
+                        Timber.tag(TAG).w(e, "Error updating document");
                     }
                 });
 
@@ -159,64 +140,49 @@ public class CoinAdapter extends RecyclerView.Adapter<CoinAdapter.MyViewHolder> 
     public void deleteFromWallet(String emailID,String id){
         db.collection("Users").document(emailID).collection("Wallet").document(id)
                 .delete()
-                .addOnSuccessListener(new OnSuccessListener<Void>() {
-                    @Override
-                    public void onSuccess(Void aVoid) {
-                        Log.d(TAG, "Banked coin removed from wallet"  );
-                    }
-                })
-                .addOnFailureListener(new OnFailureListener() {
-                    @Override
-                    public void onFailure(@NonNull Exception e) {
-                        Log.w(TAG, "Error deleting document", e);
-                    }
-                });
+                .addOnSuccessListener(aVoid -> Timber.d("Banked coin removed from wallet"))
+                .addOnFailureListener(e -> Timber.tag(TAG).w(e, "Error deleting document"));
     }
 
     public void giftCoin(double gold, String userID,String giftID,String coinID,int position){
         db.collection("Users").document(giftID)
-                .get().addOnCompleteListener(new OnCompleteListener<DocumentSnapshot>() {
-            @Override
-            public void onComplete(@NonNull Task<DocumentSnapshot> task) {
-                if (task.isSuccessful()) {
-                    DocumentSnapshot document = task.getResult();
-                    if (document.exists()) {
-                        deleteFromWallet(userID,coinID);
-                        double receiverBank = document.getDouble("GoldBank");
-                        receiverBank += gold;
-                        depositGift(receiverBank,giftID);
-                        coinList.remove(position);
-                        notifyItemRemoved(position);
-                        notifyItemRangeChanged(position, coinList.size());
+                .get().addOnCompleteListener(task -> {
+                    if (task.isSuccessful()) {
+                        DocumentSnapshot document = task.getResult();
+                        assert document != null;
+                        if (document.exists()) {
+                            deleteFromWallet(userID,coinID);
+                            double receiverBank = document.getDouble("GoldBank");
+                            receiverBank += gold;
+                            depositGift(receiverBank,giftID);
+                            coinList.remove(position);
+                            notifyItemRemoved(position);
+                            notifyItemRangeChanged(position, coinList.size());
 
+                        } else {
+
+                            Timber.d("No such document");
+                            Toast.makeText(obj, "Your Friend doesn't play this game.", Toast.LENGTH_SHORT).show();
+                        }
                     } else {
-
-                        Log.d(TAG, "No such document");
-                        Toast.makeText(obj, "Your Friend doesn't play this game.", Toast.LENGTH_SHORT).show();
+                        Timber.d(task.getException(), "get failed with ");
                     }
-                } else {
-                    Log.d(TAG, "get failed with ", task.getException());
-                }
-            }
-        });
+                });
 
 
     }
 
     public void getBankCounter(double gold, String emailID,String coinID, int pos){
         db.collection("Users").document(emailID)
-                .get().addOnCompleteListener(new OnCompleteListener<DocumentSnapshot>() {
-            @Override
-            public void onComplete(@NonNull Task<DocumentSnapshot> task) {
-                if (task.isSuccessful()) {
-                    DocumentSnapshot document = task.getResult();
-                    if (document.exists()) {
-                        bankCounter = Integer.parseInt(document.get("BankCounter").toString());
+                .get().addOnCompleteListener(task -> {
+                    if (task.isSuccessful()) {
+                        DocumentSnapshot document = task.getResult();
+                        assert document != null;
+                        if (document.exists()) {
+                            bankCounter = Integer.parseInt(Objects.requireNonNull(document.get("BankCounter")).toString());
 
-                        bankCounter +=1;
-                        document.getReference().update("BankCounter", bankCounter).addOnSuccessListener(new OnSuccessListener<Void>() {
-                            @Override
-                            public void onSuccess(Void aVoid) {
+                            bankCounter +=1;
+                            document.getReference().update("BankCounter", bankCounter).addOnSuccessListener(aVoid -> {
                                 TextView storeLoc = ((Activity)obj).findViewById(R.id.StoreLoc);
                                 TextView coinsLeft = ((Activity)obj).findViewById(R.id.CoinsLeft);
 
@@ -232,25 +198,18 @@ public class CoinAdapter extends RecyclerView.Adapter<CoinAdapter.MyViewHolder> 
                                     storeLoc.setText("Daily Quota Reached");
                                     coinsLeft.setText("Coins left to bank: 0");
                                 }
-                            }
-                        })
-                        .addOnFailureListener(new OnFailureListener() {
-                            @Override
-                            public void onFailure(@NonNull Exception e) {
-                                Log.w(TAG, "Error incrementing counter", e);
-                            }
-                        });
+                            })
+                            .addOnFailureListener(e -> Timber.tag(TAG).w(e, "Error incrementing counter"));
 
-                        Log.d(TAG, "DocumentSnapshot data: " + document.getData());
+                            Timber.d("DocumentSnapshot data: %s", document.getData());
 
+                        } else {
+                            Timber.d("No such document");
+                        }
                     } else {
-                        Log.d(TAG, "No such document");
+                        Timber.d(task.getException(), "get failed with ");
                     }
-                } else {
-                    Log.d(TAG, "get failed with ", task.getException());
-                }
-            }
-        });
+                });
 
     }
 
@@ -261,23 +220,24 @@ public class CoinAdapter extends RecyclerView.Adapter<CoinAdapter.MyViewHolder> 
         private Button gift;
 
 
-        public MyViewHolder(View view) {
+        MyViewHolder(View view) {
             super(view);
-            coinCurrency = (TextView) view.findViewById(R.id.coinCurrency);
-            value = (TextView) view.findViewById(R.id.value);
-            estGold = (TextView) view.findViewById(R.id.estGold);
-            dateCollected = (TextView) view.findViewById(R.id.dateCollected);
-            buttonBank = (Button) view.findViewById(R.id.bankButton);
-            gift = (Button) view.findViewById(R.id.gift);
+            coinCurrency =  view.findViewById(R.id.coinCurrency);
+            value =  view.findViewById(R.id.value);
+            estGold =  view.findViewById(R.id.estGold);
+            dateCollected =  view.findViewById(R.id.dateCollected);
+            buttonBank =  view.findViewById(R.id.bankButton);
+            gift =  view.findViewById(R.id.gift);
         }
     }
 
-    public  CoinAdapter(List<Wallet> coinList, Context walletActivity) {
-        this.coinList = coinList;
+    CoinAdapter(List<Wallet> coinList, Context walletActivity) {
+        CoinAdapter.coinList = coinList;
         this.obj = walletActivity;
     }
 
 
+    @NonNull
     @Override
 
     public MyViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
@@ -321,86 +281,57 @@ public class CoinAdapter extends RecyclerView.Adapter<CoinAdapter.MyViewHolder> 
 //        holder.estGold.setText(goldValue.toString());
 
 
-        holder.buttonBank.setOnClickListener( new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
+        holder.buttonBank.setOnClickListener(v -> {
 
 
-                    if(coin.currency.equals("SHIL")){
-                        goldValue = ShilToGold * coin.value;
-                    }
-                    if(coin.currency.equals("DOLR")){
-                        goldValue = DolrToGold * coin.value;
-                    }
-                    if(coin.currency.equals("PENY")){
-                        goldValue = PenyToGold * coin.value;
-                    }
-                    if(coin.currency.equals("QUID")){
-                        goldValue = QuidToGold * coin.value;
-                    }
+            if(coin.currency.equals("SHIL")){
+                goldValue = ShilToGold * coin.value;
+            }
+            if(coin.currency.equals("DOLR")){
+                goldValue = DolrToGold * coin.value;
+            }
+            if(coin.currency.equals("PENY")){
+                goldValue = PenyToGold * coin.value;
+            }
+            if(coin.currency.equals("QUID")){
+                goldValue = QuidToGold * coin.value;
+            }
+            getBankCounter(goldValue,userEmail,coin.id,position);
+            Timber.d("Banking Coin with Gold value: %s", goldValue);
 
-////                    double goldcoins = Double.parseDouble(holder.estGold.getText().toString());
-//                    bankCoin(goldValue,userEmail,cl.id);
-                    getBankCounter(goldValue,userEmail,coin.id,position);
-
-                    Log.d(TAG,"Banking Coin with Gold value: " + goldValue);
-//                    coinList.remove(position);
-//                    notifyItemRemoved(position);
-//                    notifyItemRangeChanged(position, coinList.size());
-
-                }
         });
 
-        holder.gift.setOnClickListener( new View.OnClickListener() {
-
-            LayoutInflater li = LayoutInflater.from(obj);
-            View promtsView = li.inflate(R.layout.gift_layout,null, false);
-
-            @Override
-            public void onClick(View v) {
-                if(coin.currency.equals("SHIL")){
-                    goldValue = ShilToGold * coin.value;
-                }
-                if(coin.currency.equals("DOLR")){
-                    goldValue = DolrToGold * coin.value;
-                }
-                if(coin.currency.equals("PENY")){
-                    goldValue = PenyToGold * coin.value;
-                }
-                if(coin.currency.equals("QUID")){
-                    goldValue = QuidToGold * coin.value;
-                }
-
-                // Open dialogue for email address
-
-                AlertDialog.Builder builder = new AlertDialog.Builder(obj)
-                        .setTitle("Gifting Coin")
-                        .setCancelable(true)
-                        .setView(R.layout.gift_layout);
-//                final EditText userInp = (EditText) promtsView
-//                        .findViewById(R.id.emailID);
-//                String giftEmail = userInp.getText().toString();
-//                        AlertDialog alertDialog = builder.create();
-//                alertDialog.show();
-                builder.setPositiveButton("Send Gift", (dialog, which) -> {
-                    AlertDialog test = (AlertDialog) dialog;
-                    EditText userinput = test.findViewById(R.id.emailID);
-                            String giftEmail = userinput.getText().toString();
-                    giftCoin(goldValue,userEmail,giftEmail,coin.id,position);
-//                    coinList.remove(position);
-//                    notifyItemRemoved(position);
-//                    notifyItemRangeChanged(position, coinList.size());
-//
-                });
-                builder.setNegativeButton("Cancel", (dialog, which) -> {
-//                        alertDialog.dismiss();
-                });
-                builder.create().show();
-
-
-
+        holder.gift.setOnClickListener(v -> {
+            if(coin.currency.equals("SHIL")){
+                goldValue = ShilToGold * coin.value;
+            }
+            if(coin.currency.equals("DOLR")){
+                goldValue = DolrToGold * coin.value;
+            }
+            if(coin.currency.equals("PENY")){
+                goldValue = PenyToGold * coin.value;
+            }
+            if(coin.currency.equals("QUID")){
+                goldValue = QuidToGold * coin.value;
             }
 
+            // Open dialogue for email address
+
+            AlertDialog.Builder builder = new AlertDialog.Builder(obj)
+                    .setTitle("Gifting Coin")
+                    .setCancelable(true)
+                    .setView(R.layout.gift_layout);
+
+            builder.setPositiveButton("Send Gift", (dialog, which) -> {
+                AlertDialog test = (AlertDialog) dialog;
+                EditText userinput = test.findViewById(R.id.emailID);
+                        String giftEmail = userinput.getText().toString();
+                giftCoin(goldValue,userEmail,giftEmail,coin.id,position);
+
+            });
+            builder.setNegativeButton("Cancel", (dialog, which) -> {
+            });
+            builder.create().show();
         });
 
     }
@@ -409,10 +340,5 @@ public class CoinAdapter extends RecyclerView.Adapter<CoinAdapter.MyViewHolder> 
     public int getItemCount() {
         return coinList.size();
     }
-
-
-
-
-
 }
 
