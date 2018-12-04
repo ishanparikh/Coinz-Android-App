@@ -4,6 +4,10 @@ import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.hardware.Sensor;
+import android.hardware.SensorEvent;
+import android.hardware.SensorEventListener;
+import android.hardware.SensorManager;
 import android.location.Location;
 import android.net.Uri;
 import android.os.PersistableBundle;
@@ -14,10 +18,13 @@ import android.util.Log;
 import android.view.View;
 import android.widget.Toast;
 
+import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.SetOptions;
 import com.mapbox.android.core.location.LocationEngine;
@@ -51,7 +58,7 @@ import java.util.Set;
 import java.util.concurrent.ExecutionException;
 
 
-public class MapboxActivity extends AppCompatActivity implements OnMapReadyCallback, MapboxMap.OnMapClickListener,View.OnClickListener,
+public class MapboxActivity extends AppCompatActivity implements SensorEventListener,OnMapReadyCallback, MapboxMap.OnMapClickListener,View.OnClickListener,
         LocationEngineListener, PermissionsListener {
 
     private MapView mapView;
@@ -62,7 +69,7 @@ public class MapboxActivity extends AppCompatActivity implements OnMapReadyCallb
     private Location originLocation;
     private LocationLayerPlugin locationLayerPlugin;
     private String downloadDate = ""; // Format: YYYY/MM/DD
-    private String date = "";// today's date
+    public String date = "";// today's date
     private final String preferencesFile = "MyPrefsFile"; // for storing preferences
     private String mapLink;
     private String url;
@@ -72,18 +79,14 @@ public class MapboxActivity extends AppCompatActivity implements OnMapReadyCallb
     private String markerColour;
     FirebaseFirestore db = FirebaseFirestore.getInstance();
     private FirebaseUser user;
-
-//    // variables for calculating and drawing a route
-//    private Point originPosition;
-//    private Point destinationPosition;
-//    private DirectionsRoute currentRoute;
-//    private NavigationMapRoute navigationMapRoute;
-
-
-    String ShilToGold;
-    String DolrToGold;
-    String QuidToGold;
-    String PenyToGold;
+    public  int stepCount;
+    public String ShilToGold;
+    public String DolrToGold;
+    public String QuidToGold;
+    public String PenyToGold;
+    private SensorManager sensorManager;
+    boolean activityRunning;
+    public String usrDD;
 
     com.github.clans.fab.FloatingActionButton WalletIcon, HomeIcon;
 
@@ -191,6 +194,78 @@ public class MapboxActivity extends AppCompatActivity implements OnMapReadyCallb
         }
     }
 
+    public void getUserDownloadDate(String emailID){
+        SharedPreferences settings = getSharedPreferences(preferencesFile, Context.MODE_PRIVATE);
+        // We need an Editor object to make preference changes.
+        SharedPreferences.Editor editor = settings.edit();
+
+        db.collection("Users").document(emailID)
+                .get().addOnCompleteListener(new OnCompleteListener<DocumentSnapshot>() {
+            @Override
+            public void onComplete(@NonNull Task<DocumentSnapshot> task) {
+                if (task.isSuccessful()) {
+                    DocumentSnapshot document = task.getResult();
+                    if (document.exists()) {
+                        usrDD = document.getString("LastDownloadDate");
+                        if(!usrDD.equals(date)){
+
+                            pushDailyCoinList();
+
+                            HashMap<String, Object> bc = new HashMap<>();
+                            bc.put("BankCounter", 0);
+                            db.collection("Users").document(user.getEmail())
+                                    .update(bc)
+                                    .addOnSuccessListener(new OnSuccessListener<Void>() {
+                                        @Override
+                                        public void onSuccess(Void aVoid) {
+                                            Log.d(tag, "Bank counter created for new day & User Download Date updated");
+                                            setUserDownloadDate(emailID);
+                                        }
+                                    })
+                                    .addOnFailureListener(new OnFailureListener() {
+                                        @Override
+                                        public void onFailure(@NonNull Exception e) {
+                                            Log.w(tag, "Bank counter NOT created for new day", e);
+                                        }
+                                    });
+                            editor.putString("DolrToGold", DolrToGold);
+                            editor.putString("PenyToGold", PenyToGold);
+                            editor.putString("QuidToGold", QuidToGold);
+                            editor.putString("ShilToGold", ShilToGold);
+                            editor.apply();
+                            Log.w(tag, "Daily Map Downloaded" + downloadDate + "\t"+date );
+
+                        }
+
+                    } else {
+                        Log.d(tag, "No such document");
+                    }
+                } else {
+                    Log.d(tag, "get failed with ", task.getException());
+                }
+            }
+        });
+    }
+
+    public void setUserDownloadDate(String emailID){
+        HashMap setDate = new HashMap();
+        setDate.put("LastDownloadDate",date);
+        db.collection("Users").document(emailID)
+                .update(setDate)
+                .addOnSuccessListener(new OnSuccessListener<Void>() {
+                    @Override
+                    public void onSuccess(Void aVoid) {
+                        Log.d(tag, "User Download Date updated successfully!");
+                    }
+                })
+                .addOnFailureListener(new OnFailureListener() {
+                    @Override
+                    public void onFailure(@NonNull Exception e) {
+                        Log.w(tag, "Error updating document", e);
+                    }
+                });
+    }
+
     public void updateWallet(String coinID){
         //Add to FireStore
         TodaysMap newCoin = wallet.get(coinID);
@@ -271,7 +346,7 @@ public class MapboxActivity extends AppCompatActivity implements OnMapReadyCallb
         super.onCreate(savedInstanceState);
         Mapbox.getInstance(this, getString(R.string.access_token));
         setContentView(R.layout.activity_mapbox);
-
+        sensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
         mapView = findViewById((R.id.mapView));
         mapView.onCreate(savedInstanceState);
         mapView.getMapAsync(this);
@@ -308,6 +383,14 @@ public class MapboxActivity extends AppCompatActivity implements OnMapReadyCallb
         if (mapboxMap == null) {
             Log.d(tag, "[onMapReady] mapBox is null");
         } else {
+            Sensor countSensor = sensorManager.getDefaultSensor(Sensor.TYPE_STEP_COUNTER);
+            if(countSensor != null){
+                sensorManager.registerListener(this,countSensor,SensorManager.SENSOR_DELAY_UI);
+
+            }else {
+                Toast.makeText(this, "Count sensor not available!", Toast.LENGTH_SHORT).show();
+            }
+            activityRunning = true;
             map = mapboxMap;
             map.getUiSettings().setCompassEnabled(true);
             map.getUiSettings().setZoomControlsEnabled(true);
@@ -315,8 +398,7 @@ public class MapboxActivity extends AppCompatActivity implements OnMapReadyCallb
             enableLocation();
             String pattern = "yyyy/MM/dd";
             SimpleDateFormat simpleDateFormat = new SimpleDateFormat(pattern);
-            String date = simpleDateFormat.format(new Date());
-//            downloadDate = date;
+            date = simpleDateFormat.format(new Date());
             url = "http://homepages.inf.ed.ac.uk/stg/coinz/" + date + "/coinzmap.geojson";
             Log.d(tag,url);
             mapLink = null;
@@ -342,14 +424,8 @@ public class MapboxActivity extends AppCompatActivity implements OnMapReadyCallb
                 e.printStackTrace();
             }
 
-
             FeatureCollection featureCollection = FeatureCollection.fromJson(mapLink);
             List<Feature> features = featureCollection.features();
-
-
-            // Create an Icon object for the marker to use
-            // Icon icon = IconFactory.getInstance(MapboxActivity.this).fromBitmap("#ffdf00");
-
 
             for (Feature f : features) {
 
@@ -400,20 +476,45 @@ public class MapboxActivity extends AppCompatActivity implements OnMapReadyCallb
 
             }
             renderMap(todaysMapList);
-            SharedPreferences settings = getSharedPreferences(preferencesFile,
-                    Context.MODE_PRIVATE);
-            // We need an Editor object to make preference changes.
-            SharedPreferences.Editor editor = settings.edit();
+            getUserDownloadDate(user.getEmail());
 
-            if(downloadDate.equals(date) == false){
-                pushDailyCoinList();
-                editor.putString("DolrToGold", DolrToGold);
-                editor.putString("PenyToGold", PenyToGold);
-                editor.putString("QuidToGold", QuidToGold);
-                editor.putString("ShilToGold", ShilToGold);
-                editor.apply();
-                Log.w(tag, "Daily Map Downloaded" + downloadDate + "\t"+date );
-            }
+
+//            SharedPreferences settings = getSharedPreferences(preferencesFile,
+//                    Context.MODE_PRIVATE);
+//            // We need an Editor object to make preference changes.
+//            SharedPreferences.Editor editor = settings.edit();
+//
+//            getUserDownloadDate(user.getEmail());
+//
+//            if(!downloadDate.equals(date)){
+//
+//                pushDailyCoinList();
+//
+//                HashMap<String, Object> bc = new HashMap<>();
+//                bc.put("BankCounter", 0);
+//                db.collection("Users").document(user.getEmail())
+//                        .update(bc)
+//                        .addOnSuccessListener(new OnSuccessListener<Void>() {
+//                            @Override
+//                            public void onSuccess(Void aVoid) {
+//                                Log.d(tag, "Bank counter created for new day ");
+//                            }
+//                        })
+//                        .addOnFailureListener(new OnFailureListener() {
+//                            @Override
+//                            public void onFailure(@NonNull Exception e) {
+//                                Log.w(tag, "Bank counter NOT created for new day", e);
+//                            }
+//                        });
+//
+//
+//                editor.putString("DolrToGold", DolrToGold);
+//                editor.putString("PenyToGold", PenyToGold);
+//                editor.putString("QuidToGold", QuidToGold);
+//                editor.putString("ShilToGold", ShilToGold);
+//                editor.apply();
+//                Log.w(tag, "Daily Map Downloaded" + downloadDate + "\t"+date );
+//            }
         }
      }
 
@@ -532,6 +633,7 @@ public class MapboxActivity extends AppCompatActivity implements OnMapReadyCallb
         super.onStop();
         Log.d(tag, "[onStop] Storing lastDownloadDate of " + downloadDate);
         downloadDate = date;
+        activityRunning = false;
         // All objects are from android.context.Context
         SharedPreferences settings = getSharedPreferences(preferencesFile,
                 Context.MODE_PRIVATE);
@@ -567,7 +669,9 @@ public class MapboxActivity extends AppCompatActivity implements OnMapReadyCallb
         if (locationEngine != null) {
             locationEngine.deactivate();
         }
+
         mapView.onDestroy();
+
     }
 
     @Override
@@ -577,4 +681,16 @@ public class MapboxActivity extends AppCompatActivity implements OnMapReadyCallb
         //    origPos = Point.fromLngLat(originLocation.getLongitude(),originLocation.getLatitude());
     }
 
+    @Override
+    public void onSensorChanged(SensorEvent event) {
+        if(activityRunning){
+            stepCount = (int) event.values[ 0];
+        }
+
+    }
+
+    @Override
+    public void onAccuracyChanged(Sensor sensor, int accuracy) {
+
+    }
 }

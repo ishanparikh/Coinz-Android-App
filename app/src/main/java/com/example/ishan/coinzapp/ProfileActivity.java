@@ -1,5 +1,10 @@
 package com.example.ishan.coinzapp;
 
+import android.content.Context;
+import android.hardware.SensorManager;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
+import android.provider.Settings;
 import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -8,6 +13,7 @@ import android.view.View;
 import android.content.Intent;
 import android.widget.Button;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
@@ -28,10 +34,36 @@ public class ProfileActivity extends AppCompatActivity implements View.OnClickLi
     private String TAG = "ProfileActivity";
 
 
+    public boolean haveNetworkConnection() {
+        boolean haveConnectedWifi = false;
+        boolean haveConnectedMobile = false;
+
+        ConnectivityManager cm = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+        NetworkInfo[] netInfo = cm.getAllNetworkInfo();
+        for (NetworkInfo ni : netInfo) {
+            if (ni.getTypeName().equalsIgnoreCase("WIFI"))
+                if (ni.isConnected())
+                    haveConnectedWifi = true;
+            if (ni.getTypeName().equalsIgnoreCase("MOBILE"))
+                if (ni.isConnected())
+                    haveConnectedMobile = true;
+        }
+        return haveConnectedWifi || haveConnectedMobile;
+    }
+
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_profile);
+//        sensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
+        boolean networkCheck = haveNetworkConnection();
+        Log.d(TAG, "Connection Status: "+ networkCheck);
+        if (!networkCheck ){
+//            ConnectionStatus iia = new ConnectionStatus(getApplicationContext());
+            Toast.makeText(getBaseContext(), "Please connect to a hotspot", Toast.LENGTH_LONG).show();
+            startActivity(new Intent(Settings.ACTION_WIFI_SETTINGS));
+        }
 
         //initializing firebase authentication object
         firebaseAuth = FirebaseAuth.getInstance();
@@ -55,23 +87,6 @@ public class ProfileActivity extends AppCompatActivity implements View.OnClickLi
 
         //displaying logged in user name
         textViewUserEmail.setText("Welcome "+user.getEmail());
-
-//        db.collection("Users").document(user.getEmail())
-//                .update("GoldBank", 0.0)
-//                .addOnSuccessListener(new OnSuccessListener<Void>() {
-//                    @Override
-//                    public void onSuccess(Void aVoid) {
-//                        Log.d(TAG, "Gold Bank initialised ");
-//                    }
-//                })
-//                .addOnFailureListener(new OnFailureListener() {
-//                    @Override
-//                    public void onFailure(@NonNull Exception e) {
-//                        Log.w(TAG, "Error, Gold Bank NOT initialised", e);
-//                    }
-//                });
-//
-//
 
         //adding listener to button
         buttonLogout.setOnClickListener(this);

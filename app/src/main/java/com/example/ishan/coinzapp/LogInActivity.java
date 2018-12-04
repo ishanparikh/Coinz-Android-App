@@ -53,10 +53,10 @@ public class LogInActivity extends AppCompatActivity implements View.OnClickList
 
 
         //initializing views
-        editTextEmail = (EditText) findViewById(R.id.editTextEmail);
-        editTextPassword = (EditText) findViewById(R.id.editTextPassword);
-        buttonSignIn = (Button) findViewById(R.id.buttonSignin);
-        textViewSignup  = (TextView) findViewById(R.id.textViewSignUp);
+        editTextEmail =  findViewById(R.id.editTextEmail);
+        editTextPassword = findViewById(R.id.editTextPassword);
+        buttonSignIn =  findViewById(R.id.buttonSignin);
+        textViewSignup  =  findViewById(R.id.textViewSignUp);
 
         progressDialog = new ProgressDialog(this);
 
@@ -90,20 +90,17 @@ public class LogInActivity extends AppCompatActivity implements View.OnClickList
         }
 
         //if validations are good, progress bar will appear
-        progressDialog.setMessage("Registering User, please wait ...");
+        progressDialog.setMessage("Logging User In, please wait ...");
         progressDialog.show();
         //logging in the user
         firebaseAuth.signInWithEmailAndPassword(email, password)
-                .addOnCompleteListener(this, new OnCompleteListener<AuthResult>() {
-                    @Override
-                    public void onComplete(@NonNull Task<AuthResult> task) {
-                        progressDialog.dismiss();
-                        //if the task is successfull
-                        if(task.isSuccessful()){
-                            //start the profile activity
-                            finish();
-                            startActivity(new Intent(getApplicationContext(), ProfileActivity.class));
-                        }
+                .addOnCompleteListener(this, task -> {
+                    progressDialog.dismiss();
+                    //if the task is successfull
+                    if(task.isSuccessful()){
+                        //start the profile activity
+                        finish();
+                        startActivity(new Intent(getApplicationContext(), ProfileActivity.class));
                     }
                 });
 

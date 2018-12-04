@@ -1,9 +1,11 @@
 package com.example.ishan.coinzapp;
 
+import android.app.AlertDialog;
 import android.app.ProgressDialog;
 import android.content.Context;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
+import android.provider.Settings;
 import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -54,29 +56,26 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     public FirebaseFirestore db = FirebaseFirestore.getInstance();
     public FirebaseUser user;
+    public boolean networkCheck;
 
 
-    public class ConnectionStatus {
 
-        private Context _context;
 
-        public ConnectionStatus(Context context) {
-            this._context = context;
+    public boolean haveNetworkConnection() {
+        boolean haveConnectedWifi = false;
+        boolean haveConnectedMobile = false;
+
+        ConnectivityManager cm = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+        NetworkInfo[] netInfo = cm.getAllNetworkInfo();
+        for (NetworkInfo ni : netInfo) {
+            if (ni.getTypeName().equalsIgnoreCase("WIFI"))
+                if (ni.isConnected())
+                    haveConnectedWifi = true;
+            if (ni.getTypeName().equalsIgnoreCase("MOBILE"))
+                if (ni.isConnected())
+                    haveConnectedMobile = true;
         }
-
-        public boolean isConnectionAvailable() {
-            ConnectivityManager connectivity = (ConnectivityManager) _context
-                    .getSystemService(Context.CONNECTIVITY_SERVICE);
-            if (connectivity != null) {
-                NetworkInfo[] info = connectivity.getAllNetworkInfo();
-                if (info != null)
-                    for (int i = 0; i < info.length; i++)
-                        if (info[i].getState() == NetworkInfo.State.CONNECTED) {
-                            return true;
-                        }
-            }
-            return false;
-        }
+        return haveConnectedWifi || haveConnectedMobile;
     }
 
 
@@ -85,9 +84,22 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         Context ctxt = getApplicationContext();
-        ConnectionStatus access = new ConnectionStatus(ctxt);
-        String net = String.valueOf(access.isConnectionAvailable());
-        Log.d(TAG, "Connection Status: "+ net);
+        AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(this);
+
+
+        networkCheck = haveNetworkConnection();
+        Log.d(TAG, "Connection Status: "+ networkCheck);
+        if (!networkCheck ){
+            Toast.makeText(getBaseContext(), "Please connect to a WIFI network", Toast.LENGTH_LONG).show();
+            startActivity(new Intent(Settings.ACTION_WIFI_SETTINGS));
+            networkCheck = haveNetworkConnection();
+        }
+//        if (!networkCheck ){
+//            Toast.makeText(getBaseContext(), "Please connect to a hotspot", Toast.LENGTH_LONG).show();
+//            startActivity(new Intent(Settings.ACTION_DATA_ROAMING_SETTINGS));
+//            networkCheck = haveNetworkConnection();
+//        }
+
         firebaseAuth =  FirebaseAuth.getInstance();
 
         //if getCurrentUser does not returns null
@@ -147,9 +159,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                         if(task.isSuccessful())
                         {
                             user = firebaseAuth.getCurrentUser();
-                            HashMap<String, Double> info = new HashMap<String, Double>();
+                            HashMap<String, Object> info = new HashMap<String, Object>();
                             info.put("GoldBank", 0.0);
                             info.put("SpareGold", 0.0);
+                            info.put("LastDownloadDate", " ");
 
                             db.collection("Users").document(user.getEmail())
                                     .set(info)
@@ -166,8 +179,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                                         }
                                     });
 
-                            finish();
-                            startActivity(new Intent(getApplicationContext(), ProfileActivity.class));                        }
+                                finish();
+                            startActivity(new Intent(getApplicationContext(), ProfileActivity.class));
+                        }
                         else
                         {
                             Toast.makeText(MainActivity.this, "Registration not done, try again",Toast.LENGTH_SHORT).show();

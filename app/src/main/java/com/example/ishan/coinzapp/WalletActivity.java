@@ -1,6 +1,7 @@
 package com.example.ishan.coinzapp;
 
 import android.content.Context;
+import android.content.Intent;
 import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -18,6 +19,7 @@ import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.google.firebase.firestore.QuerySnapshot;
@@ -27,6 +29,9 @@ import java.util.List;
 import android.content.res.Resources;
 import android.graphics.Rect;
 import android.widget.Button;
+import android.widget.ImageButton;
+import android.widget.TextView;
+import android.widget.Toast;
 
 public class WalletActivity extends AppCompatActivity   {
     private RecyclerView recyclerView;
@@ -35,6 +40,10 @@ public class WalletActivity extends AppCompatActivity   {
     public static List<Wallet> coinList = new ArrayList<>();
     private String TAG = "WalletActivity.java";
     private FirebaseUser user;
+    TextView storeLoc;
+    TextView coinsLeft;
+    ImageButton homeButton;
+//    public FirebaseUser user;
 
 
     public void getData() {
@@ -54,7 +63,7 @@ public class WalletActivity extends AppCompatActivity   {
                                 Wallet coin = new Wallet(date, curr,document.getId(),vals);
                                 coinList.add(coin);
                             }
-                            coinAdapter = new CoinAdapter(coinList, getApplicationContext());
+                            coinAdapter = new CoinAdapter(coinList, WalletActivity.this);
                             recyclerView.setAdapter(coinAdapter);
                         } else {
                             Log.d(TAG, "Error getting documents: ", task.getException());
@@ -75,6 +84,50 @@ public class WalletActivity extends AppCompatActivity   {
         recyclerView.setLayoutManager(mLayoutManager);
 //        recyclerView.addItemDecoration(new GridSpacingItemDecoration(, dpToPx(10), true));
         recyclerView.setItemAnimator(new DefaultItemAnimator());
+        storeLoc = (TextView) findViewById(R.id.StoreLoc);
+        coinsLeft = (TextView) findViewById(R.id.CoinsLeft);
+        homeButton = (ImageButton) findViewById(R.id.backToWalletActivity);
+
+        homeButton.setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) {
+                // Code here executes on main thread after user presses button
+//                this.
+                startActivity(new Intent(WalletActivity.this, MapboxActivity.class));
+            }
+        });
+//        if (user != null) {
+//            db.collection("Users").document(user.getEmail())
+//                    .get().addOnCompleteListener(new OnCompleteListener<DocumentSnapshot>() {
+//                @Override
+//                public void onComplete(@NonNull Task<DocumentSnapshot> task) {
+//                    if (task.isSuccessful()) {
+//                        DocumentSnapshot document = task.getResult();
+//                        if (document.exists()) {
+//                            int bankCounter = Integer.parseInt(document.get("BankCounter").toString());
+//                            if(bankCounter < 25){
+//                                storeLoc.setText("Store Location: Bank");
+//                                coinsLeft.setText("Coins left to bank: "+(25-bankCounter));
+//                            }
+//                            else {
+//                                storeLoc.setText("Store Location: Spare Gold");
+//                                coinsLeft.setText("Coins left to bank: 0");
+//
+//                            }
+//                            Log.d(TAG, "DocumentSnapshot data: " + document.getData());
+//                        } else {
+//                            Log.d(TAG, "No such document");
+//                        }
+//                    } else {
+//                        Log.d(TAG, "get failed with ", task.getException());
+//                    }
+//                }
+//            });
+//
+//        }
+
+
+
+//     textViewSignup  = (TextView) findViewById(R.id.textViewSignUp);
 
         getData();
 
