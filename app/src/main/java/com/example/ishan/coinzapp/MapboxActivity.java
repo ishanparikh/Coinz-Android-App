@@ -71,7 +71,7 @@ public class MapboxActivity extends AppCompatActivity implements SensorEventList
     // today's date
     public String date = "";
     // for storing preferences
-    private final String preferencesFile = "MyPrefsFile";
+    String preferencesFile = "MyPrefsFile";
     HashMap<String,TodaysMap> todaysMapList = new HashMap<>();
     HashMap<String,TodaysMap> activatedMapList = new HashMap<>();
     public static HashMap<String,TodaysMap> wallet = new HashMap<>();
@@ -417,6 +417,8 @@ public class MapboxActivity extends AppCompatActivity implements SensorEventList
 
             }
             getUserDownloadDate(user.getEmail());
+
+
 //            renderMap(todaysMapList);
 
 //            SharedPreferences settings = getSharedPreferences(preferencesFile,

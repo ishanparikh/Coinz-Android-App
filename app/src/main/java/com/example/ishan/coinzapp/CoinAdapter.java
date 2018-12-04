@@ -47,7 +47,7 @@ public class CoinAdapter extends RecyclerView.Adapter<CoinAdapter.MyViewHolder> 
     public String date;
     private FirebaseUser user;
     private int bankCounter;
-    private final String preferencesFile = "MyPrefsFile";
+    String preferencesFile = "MyPrefsFile";
     private Context obj;
 
     public class NotLoggingTree extends Timber.Tree {
