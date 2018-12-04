@@ -24,6 +24,13 @@ public class ProfileActivity extends AppCompatActivity implements View.OnClickLi
     private Button buttonLogout;
     private Button buttonOpenMap;
 
+    public class NotLoggingTree extends Timber.Tree {
+        @Override
+        protected void log(final int priority, final String tag, final String message, final Throwable throwable) {
+
+        }
+    }
+
 
     public boolean haveNetworkConnection() {
         boolean haveConnectedWifi = false;
@@ -48,6 +55,7 @@ public class ProfileActivity extends AppCompatActivity implements View.OnClickLi
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        Timber.plant(new Timber.DebugTree());
         setContentView(R.layout.activity_profile);
 //        sensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
         boolean networkCheck = haveNetworkConnection();

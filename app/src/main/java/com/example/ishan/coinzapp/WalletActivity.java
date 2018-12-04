@@ -28,6 +28,13 @@ public class WalletActivity extends AppCompatActivity   {
     TextView coinsLeft;
     ImageButton homeButton;
 
+    public class NotLoggingTree extends Timber.Tree {
+        @Override
+        protected void log(final int priority, final String tag, final String message, final Throwable throwable) {
+
+        }
+    }
+
 
     public void getData() {
 
@@ -56,6 +63,7 @@ public class WalletActivity extends AppCompatActivity   {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        Timber.plant(new Timber.DebugTree());
         user = FirebaseAuth.getInstance().getCurrentUser();
         setContentView(R.layout.activity_wallet);
         recyclerView = findViewById(R.id.recycler_view);

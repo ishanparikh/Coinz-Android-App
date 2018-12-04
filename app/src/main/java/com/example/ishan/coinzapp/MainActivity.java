@@ -38,6 +38,13 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     public FirebaseUser user;
     public boolean networkCheck;
 
+    public class NotLoggingTree extends Timber.Tree {
+        @Override
+        protected void log(final int priority, final String tag, final String message, final Throwable throwable) {
+
+        }
+    }
+
 
 
 
@@ -63,6 +70,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        Timber.plant(new Timber.DebugTree());
         setContentView(R.layout.activity_main);
         networkCheck = haveNetworkConnection();
         Timber.d("Connection Status: %s", networkCheck);

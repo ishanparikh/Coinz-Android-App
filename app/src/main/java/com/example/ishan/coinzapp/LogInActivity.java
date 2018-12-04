@@ -19,6 +19,8 @@ import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.AuthResult;
 import com.google.firebase.auth.FirebaseAuth;
 
+import timber.log.Timber;
+
 public class LogInActivity extends AppCompatActivity implements View.OnClickListener{
 
     //defining views
@@ -33,9 +35,17 @@ public class LogInActivity extends AppCompatActivity implements View.OnClickList
     //progress dialog
     private ProgressDialog progressDialog;
 
+    public class NotLoggingTree extends Timber.Tree {
+        @Override
+        protected void log(final int priority, final String tag, final String message, final Throwable throwable) {
+
+        }
+    }
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        Timber.plant(new Timber.DebugTree());
         setContentView(R.layout.activity_log_in);
 
         //getting firebase auth object

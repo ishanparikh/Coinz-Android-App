@@ -50,6 +50,13 @@ public class CoinAdapter extends RecyclerView.Adapter<CoinAdapter.MyViewHolder> 
     private final String preferencesFile = "MyPrefsFile";
     private Context obj;
 
+    public class NotLoggingTree extends Timber.Tree {
+        @Override
+        protected void log(final int priority, final String tag, final String message, final Throwable throwable) {
+
+        }
+    }
+
     private void getBankBalance(String emailID){
         db.collection("Users").document(emailID)
                 .get().addOnCompleteListener(task -> {
@@ -241,6 +248,7 @@ public class CoinAdapter extends RecyclerView.Adapter<CoinAdapter.MyViewHolder> 
     @Override
 
     public MyViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
+        Timber.plant(new Timber.DebugTree());
         View itemView = LayoutInflater.from(parent.getContext())
                 .inflate(R.layout.collections, parent, false);
 

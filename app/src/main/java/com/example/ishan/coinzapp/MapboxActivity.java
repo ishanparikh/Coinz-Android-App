@@ -13,6 +13,7 @@ import android.os.PersistableBundle;
 import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.Toast;
 import com.google.android.gms.tasks.OnSuccessListener;
@@ -20,6 +21,7 @@ import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.google.firebase.firestore.SetOptions;
 import com.mapbox.android.core.location.LocationEngine;
 import com.mapbox.android.core.location.LocationEngineListener;
@@ -48,6 +50,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ExecutionException;
 import timber.log.Timber;
@@ -70,6 +73,7 @@ public class MapboxActivity extends AppCompatActivity implements SensorEventList
     // for storing preferences
     private final String preferencesFile = "MyPrefsFile";
     HashMap<String,TodaysMap> todaysMapList = new HashMap<>();
+    HashMap<String,TodaysMap> activatedMapList = new HashMap<>();
     public static HashMap<String,TodaysMap> wallet = new HashMap<>();
     DownloadFileTask urlObj = new DownloadFileTask();
     private String markerColour;
@@ -83,7 +87,15 @@ public class MapboxActivity extends AppCompatActivity implements SensorEventList
     private SensorManager sensorManager;
     boolean activityRunning;
     public String usrDD;
+    private double distWalked = 0;
     com.github.clans.fab.FloatingActionButton WalletIcon, HomeIcon;
+
+    public class NotLoggingTree extends Timber.Tree {
+        @Override
+        protected void log(final int priority, final String tag, final String message, final Throwable throwable) {
+
+        }
+    }
 
 
     public void renderMap(HashMap<String,TodaysMap> todaysMapList){
@@ -152,6 +164,34 @@ public class MapboxActivity extends AppCompatActivity implements SensorEventList
         }
     }
 
+    public void getaAtivatedMapList(String emailID){
+        db.collection("Users").document(Objects.requireNonNull(emailID)).collection("DailyCoinList")
+                .get()
+                .addOnCompleteListener(task -> {
+                    if (task.isSuccessful()) {
+                        for (QueryDocumentSnapshot document : Objects.requireNonNull(task.getResult())) {
+                            Timber.d(document.getId() + " => " + document.getData());
+
+                            Map loc = (Map) document.get("loc");
+
+                            TodaysMap activated = new TodaysMap(Objects.requireNonNull(document.get("date")).toString(),
+                                    Objects.requireNonNull(document.get("currency")).toString(),
+                                    Objects.requireNonNull(document.get("id")).toString(),
+                                    (Double) document.get("value"),
+                                    new LatLng((double) (loc.get("latitude")), (double) (loc.get("longitude"))),
+                                    Objects.requireNonNull(document.get("symbol")).toString());
+
+                            activatedMapList.put(activated.id, activated);
+                        }
+                        renderMap(activatedMapList);
+
+                    } else {
+                        Timber.d(task.getException(), "Error getting documents: ");
+                    }
+                });
+
+    }
+
     public void getUserDownloadDate(String emailID){
         SharedPreferences settings = getSharedPreferences(preferencesFile, Context.MODE_PRIVATE);
         // We need an Editor object to make preference changes.
@@ -165,8 +205,10 @@ public class MapboxActivity extends AppCompatActivity implements SensorEventList
                         if (document.exists()) {
                             usrDD = document.getString("LastDownloadDate");
                             assert usrDD != null;
+                            // if new day, then
                             if(!usrDD.equals(date)){
 
+                                renderMap(todaysMapList);
                                 pushDailyCoinList();
 
                                 HashMap<String, Object> bc = new HashMap<>();
@@ -185,6 +227,11 @@ public class MapboxActivity extends AppCompatActivity implements SensorEventList
                                 editor.apply();
                                 Timber.tag(tag).w("Daily Map Downloaded" + downloadDate + "\t" + date);
 
+                            }else {
+                                // User has already been active on current day
+                                getaAtivatedMapList(emailID);
+
+//                                renderMap(activatedMapList);
                             }
 
                         } else {
@@ -253,6 +300,10 @@ public class MapboxActivity extends AppCompatActivity implements SensorEventList
     protected void onCreate(Bundle savedInstanceState) {
 
         super.onCreate(savedInstanceState);
+        if (BuildConfig.DEBUG)
+            Timber.plant(new Timber.DebugTree());
+        else
+            Timber.plant(new NotLoggingTree());
         Mapbox.getInstance(this, getString(R.string.access_token));
         setContentView(R.layout.activity_mapbox);
         sensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
@@ -261,10 +312,8 @@ public class MapboxActivity extends AppCompatActivity implements SensorEventList
         mapView.getMapAsync(this);
         WalletIcon = findViewById(R.id.WalletIcon);
         HomeIcon = findViewById(R.id.HomeIcon);
-
         HomeIcon.setOnClickListener(this);
         WalletIcon.setOnClickListener(this);
-
         user = FirebaseAuth.getInstance().getCurrentUser();
 
     }
@@ -311,8 +360,6 @@ public class MapboxActivity extends AppCompatActivity implements SensorEventList
                 DolrToGold = (rateObj.get("DOLR").toString());
                 QuidToGold = (rateObj.get("QUID").toString());
                 PenyToGold = (rateObj.get("PENY").toString());
-
-
             } catch (JSONException e) {
                 e.printStackTrace();
             }
@@ -368,11 +415,9 @@ public class MapboxActivity extends AppCompatActivity implements SensorEventList
 //                }
 
 
-
             }
-            renderMap(todaysMapList);
             getUserDownloadDate(user.getEmail());
-
+//            renderMap(todaysMapList);
 
 //            SharedPreferences settings = getSharedPreferences(preferencesFile,
 //                    Context.MODE_PRIVATE);
@@ -452,7 +497,7 @@ public class MapboxActivity extends AppCompatActivity implements SensorEventList
 
     private void setCameraPosition(Location location) {
         map.animateCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(location.getLatitude(),
-                location.getLongitude()), 13.0));
+                location.getLongitude()), map.getCameraPosition().zoom));
     }
 
     @SuppressLint("MissingPermission")
@@ -464,6 +509,12 @@ public class MapboxActivity extends AppCompatActivity implements SensorEventList
     @Override
     public void onLocationChanged(Location location) {
         if (location != null) {
+            if (originLocation != null)
+            {
+                distWalked += originLocation.distanceTo(location);
+                Log.d("MapboxActivity.java","distWalked =" + distWalked);
+
+            }
             originLocation = location;
             setCameraPosition(location);
             pickUpCoin();
@@ -475,8 +526,7 @@ public class MapboxActivity extends AppCompatActivity implements SensorEventList
         //Present Toast/Dialogue to user to enable Location services
         Context context = getApplicationContext();
         CharSequence text = "Enable Location!";
-        int duration = Toast.LENGTH_SHORT;
-        Toast toast = Toast.makeText(context, text, duration);
+        Toast toast = Toast.makeText(context, text, Toast.LENGTH_SHORT);
         toast.show();
     }
 
