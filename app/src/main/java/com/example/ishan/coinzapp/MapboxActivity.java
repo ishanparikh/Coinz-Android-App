@@ -61,24 +61,26 @@ import timber.log.Timber;
 public class MapboxActivity extends AppCompatActivity implements SensorEventListener,OnMapReadyCallback, MapboxMap.OnMapClickListener,View.OnClickListener,
         LocationEngineListener, PermissionsListener {
 
-    private MapView mapView;
-    private String tag = "MapboxActivity";
-    private MapboxMap map;
-    private PermissionsManager permissionsManager;
-    private LocationEngine locationEngine;
-    private Location originLocation;
-    private LocationLayerPlugin locationLayerPlugin;
+    public MapView mapView;
+    public String tag = "MapboxActivity";
+    public MapboxMap map;
+    public PermissionsManager permissionsManager;
+    public LocationEngine locationEngine;
+    public Location originLocation;
+    public LocationLayerPlugin locationLayerPlugin;
     // Format: YYYY/MM/DD
-    private String downloadDate = "";
+    public String downloadDate = "";
     // today's date
     public String date = "";
     // for storing preferences
-    private  final String preferencesFile = "MyPrefsFile";
+    public  final String preferencesFile = "MyPrefsFile";
+
     HashMap<String,TodaysMap> todaysMapList = new HashMap<>();
     HashMap<String,TodaysMap> activatedMapList = new HashMap<>();
-    public static HashMap<String,TodaysMap> wallet = new HashMap<>();
+    HashMap<String,TodaysMap> wallet = new HashMap<>();
+
     DownloadFileTask urlObj = new DownloadFileTask();
-    private String markerColour;
+    public String markerColour;
     FirebaseFirestore db = FirebaseFirestore.getInstance();
     private FirebaseUser user;
     public  int stepCount;
@@ -86,10 +88,10 @@ public class MapboxActivity extends AppCompatActivity implements SensorEventList
     public String DolrToGold;
     public String QuidToGold;
     public String PenyToGold;
-    private SensorManager sensorManager;
+    public SensorManager sensorManager;
     boolean activityRunning;
     public String usrDD;
-    private double distWalked = 0;
+    public double distWalked = 0;
     com.github.clans.fab.FloatingActionButton WalletIcon, HomeIcon;
 
     public class NotLoggingTree extends Timber.Tree {
@@ -140,6 +142,7 @@ public class MapboxActivity extends AppCompatActivity implements SensorEventList
         double usrLong = originLocation.getLongitude();
         List<String> rmID = new ArrayList<>();
         for (String i : todaysMapList.keySet()){
+
             double markerLat = todaysMapList.get(i).loc.getLatitude();
             double markerLong = todaysMapList.get(i).loc.getLongitude();
             double phi1 = Math.toRadians(usrLat);
@@ -148,8 +151,10 @@ public class MapboxActivity extends AppCompatActivity implements SensorEventList
             double R = 6371e3;
             double dist = Math.acos(Math.sin(phi1)* Math.sin(phi2) +
                     Math.cos(phi1) * Math.cos(phi2) * Math.cos(delta)) * R;
+
             if(dist <= 25){
-                wallet.put(i,todaysMapList.get(i));
+
+                wallet.put(i, todaysMapList.get(i));
                 rmID.add(i);
                 updateWallet(i);
             }

@@ -19,11 +19,11 @@ import android.widget.TextView;
 import timber.log.Timber;
 
 public class WalletActivity extends AppCompatActivity   {
-    private RecyclerView recyclerView;
-    private CoinAdapter coinAdapter;
+    public RecyclerView recyclerView;
+    public CoinAdapter coinAdapter;
     FirebaseFirestore db = FirebaseFirestore.getInstance();
     public static List<Wallet> coinList = new ArrayList<>();
-    private FirebaseUser user;
+    public FirebaseUser user;
     TextView storeLoc;
     TextView coinsLeft;
     ImageButton homeButton;

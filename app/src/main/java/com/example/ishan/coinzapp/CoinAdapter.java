@@ -36,19 +36,19 @@ import timber.log.Timber;
 
 public class CoinAdapter extends RecyclerView.Adapter<CoinAdapter.MyViewHolder>  {
 
-    private String TAG = "CoinAdapter.java";
-    private FirebaseFirestore db = FirebaseFirestore.getInstance();
-    private static List<Wallet> coinList = new ArrayList<>();
-    private double ShilToGold ;
-    private double DolrToGold ;
-    private double QuidToGold ;
-    private double PenyToGold ;
-    private double goldValue;
-    private double goldBank;
-    private double spareGold;
+    public String TAG = "CoinAdapter.java";
+    public FirebaseFirestore db = FirebaseFirestore.getInstance();
+    public static List<Wallet> coinList = new ArrayList<>();
+    public double ShilToGold ;
+    public double DolrToGold ;
+    public double QuidToGold ;
+    public double PenyToGold ;
+    public double goldValue;
+    public double goldBank;
+    public double spareGold;
     public String date;
     private FirebaseUser user;
-    private int bankCounter;
+    public int bankCounter;
     String preferencesFile = "MyPrefsFile";
     private Context obj;
 
