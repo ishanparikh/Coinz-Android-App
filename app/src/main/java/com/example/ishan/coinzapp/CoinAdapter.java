@@ -24,6 +24,8 @@ import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.QueryDocumentSnapshot;
+import com.google.firebase.firestore.QuerySnapshot;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -255,6 +257,28 @@ public class CoinAdapter extends RecyclerView.Adapter<CoinAdapter.MyViewHolder> 
         return new MyViewHolder(itemView);
     }
 
+    public void setExchangeRates(String email, int pos){
+        db.collection("Users").document(email)
+                .get()
+                .addOnCompleteListener(new OnCompleteListener<QuerySnapshot>() {
+                    @Override
+                    public void onComplete(@NonNull Task<QuerySnapshot> task) {
+                        if (task.isSuccessful()) {
+                            for (QueryDocumentSnapshot document : task.getResult()) {
+//                                ShilToGold = Double.parseDouble(document.getString("ShilToGold"));
+//                                DolrToGold = Double.parseDouble(document.getString("DolrToGold"));
+//                                QuidToGold = Double.parseDouble(document.getString("QuidToGold"));
+//                                PenyToGold = Double.parseDouble(document.getString("PenyToGold"));
+
+                                Log.d(TAG, document.getId() + " => " + document.getData());
+                            }
+                        } else {
+                            Log.d(TAG, "Error getting documents: ", task.getException());
+                        }
+                    }
+                });
+    }
+
     public void onBindViewHolder(MyViewHolder holder, int position) {
         user = FirebaseAuth.getInstance().getCurrentUser();
         String userEmail = user.getEmail();
@@ -265,6 +289,10 @@ public class CoinAdapter extends RecyclerView.Adapter<CoinAdapter.MyViewHolder> 
         DolrToGold = Double.parseDouble(settings.getString("PenyToGold", ""));
         QuidToGold = Double.parseDouble(settings.getString("QuidToGold", ""));
         PenyToGold = Double.parseDouble(settings.getString("ShilToGold", ""));
+
+        //reading fromm firestore//
+
+
 
         Wallet coin = coinList.get(position);
         holder.coinCurrency.setText("Currency:\n"+coin.currency);

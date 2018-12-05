@@ -16,6 +16,8 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.widget.Toast;
+
+import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
@@ -192,6 +194,20 @@ public class MapboxActivity extends AppCompatActivity implements SensorEventList
 
     }
 
+    public void setExchangeRates(String emailID,String d2g,String q2g,String s2g,String p2g){
+
+        HashMap<String, Object> exchange = new HashMap<>();
+        exchange.put("DolrToGold", d2g);
+        exchange.put("PenyToGold", p2g);
+        exchange.put("QuidToGold", q2g);
+        exchange.put("ShilToGold", s2g);
+
+        db.collection("Users").document(emailID)
+                .set(exchange)
+                .addOnSuccessListener(aVoid -> Timber.d("Exchange rates uploaded"))
+                .addOnFailureListener(e -> Timber.w(e, "Error uploading exchange rate"));
+    }
+
     public void getUserDownloadDate(String emailID){
         SharedPreferences settings = getSharedPreferences(preferencesFile, Context.MODE_PRIVATE);
         // We need an Editor object to make preference changes.
@@ -225,6 +241,8 @@ public class MapboxActivity extends AppCompatActivity implements SensorEventList
                                 editor.putString("QuidToGold", QuidToGold);
                                 editor.putString("ShilToGold", ShilToGold);
                                 editor.apply();
+//                                setExchangeRates( emailID,DolrToGold,QuidToGold,ShilToGold,PenyToGold);
+
                                 Timber.tag(tag).w("Daily Map Downloaded" + downloadDate + "\t" + date);
 
                             }else {
@@ -360,6 +378,8 @@ public class MapboxActivity extends AppCompatActivity implements SensorEventList
                 DolrToGold = (rateObj.get("DOLR").toString());
                 QuidToGold = (rateObj.get("QUID").toString());
                 PenyToGold = (rateObj.get("PENY").toString());
+                setExchangeRates(user.getEmail(),DolrToGold,QuidToGold,ShilToGold,PenyToGold);
+
             } catch (JSONException e) {
                 e.printStackTrace();
             }
