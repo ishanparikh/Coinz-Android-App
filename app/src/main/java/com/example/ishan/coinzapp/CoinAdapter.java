@@ -257,26 +257,107 @@ public class CoinAdapter extends RecyclerView.Adapter<CoinAdapter.MyViewHolder> 
         return new MyViewHolder(itemView);
     }
 
-    public void setExchangeRates(String email, int pos){
+    public void setExchangeRates(MyViewHolder holder,String email, int position){
         db.collection("Users").document(email)
-                .get()
-                .addOnCompleteListener(new OnCompleteListener<QuerySnapshot>() {
-                    @Override
-                    public void onComplete(@NonNull Task<QuerySnapshot> task) {
-                        if (task.isSuccessful()) {
-                            for (QueryDocumentSnapshot document : task.getResult()) {
-//                                ShilToGold = Double.parseDouble(document.getString("ShilToGold"));
-//                                DolrToGold = Double.parseDouble(document.getString("DolrToGold"));
-//                                QuidToGold = Double.parseDouble(document.getString("QuidToGold"));
-//                                PenyToGold = Double.parseDouble(document.getString("PenyToGold"));
+                .get().addOnCompleteListener(new OnCompleteListener<DocumentSnapshot>() {
+            @Override
+            public void onComplete(@NonNull Task<DocumentSnapshot> task) {
+                if (task.isSuccessful()) {
+                    DocumentSnapshot document = task.getResult();
+                    if (document.exists()) {
+                        ShilToGold = Double.parseDouble(document.getString("ShilToGold"));
+                        DolrToGold = Double.parseDouble(document.getString("DolrToGold"));
+                        QuidToGold = Double.parseDouble(document.getString("QuidToGold"));
+                        PenyToGold = Double.parseDouble(document.getString("PenyToGold"));
 
-                                Log.d(TAG, document.getId() + " => " + document.getData());
-                            }
-                        } else {
-                            Log.d(TAG, "Error getting documents: ", task.getException());
+
+                        Wallet coin = coinList.get(position);
+                        holder.coinCurrency.setText("Currency:\n"+coin.currency);
+                        holder.dateCollected.setText("Date Collected:\n"+coin.date);
+                        holder.value.setText("Value:\n"+Double.toString(coin.value));
+
+
+
+                        if(coin.currency.equals("SHIL")){
+                            goldValue = ShilToGold * coin.value;
                         }
+                        if(coin.currency.equals("DOLR")){
+                            goldValue = DolrToGold * coin.value;
+                        }
+                        if(coin.currency.equals("PENY")){
+                            goldValue = PenyToGold * coin.value;
+                        }
+                        if(coin.currency.equals("QUID")){
+                            goldValue = QuidToGold * coin.value;
+                        }
+                        holder.estGold.setText("Gold Value:\n" + goldValue);
+//        holder.estGold.setText(goldValue.toString());
+
+
+                        holder.buttonBank.setOnClickListener(v -> {
+
+
+                            if(coin.currency.equals("SHIL")){
+                                goldValue = ShilToGold * coin.value;
+                            }
+                            if(coin.currency.equals("DOLR")){
+                                goldValue = DolrToGold * coin.value;
+                            }
+                            if(coin.currency.equals("PENY")){
+                                goldValue = PenyToGold * coin.value;
+                            }
+                            if(coin.currency.equals("QUID")){
+                                goldValue = QuidToGold * coin.value;
+                            }
+                            getBankCounter(goldValue,email,coin.id,position);
+                            Timber.d("Banking Coin with Gold value: %s", goldValue);
+
+                        });
+
+                        holder.gift.setOnClickListener(v -> {
+                            if(coin.currency.equals("SHIL")){
+                                goldValue = ShilToGold * coin.value;
+                            }
+                            if(coin.currency.equals("DOLR")){
+                                goldValue = DolrToGold * coin.value;
+                            }
+                            if(coin.currency.equals("PENY")){
+                                goldValue = PenyToGold * coin.value;
+                            }
+                            if(coin.currency.equals("QUID")){
+                                goldValue = QuidToGold * coin.value;
+                            }
+
+                            // Open dialogue for email address
+
+                            AlertDialog.Builder builder = new AlertDialog.Builder(obj)
+                                    .setTitle("Gifting Coin")
+                                    .setCancelable(true)
+                                    .setView(R.layout.gift_layout);
+
+                            builder.setPositiveButton("Send Gift", (dialog, which) -> {
+                                AlertDialog test = (AlertDialog) dialog;
+                                EditText userinput = test.findViewById(R.id.emailID);
+                                String giftEmail = userinput.getText().toString();
+                                giftCoin(goldValue,email,giftEmail,coin.id,position);
+
+                            });
+                            builder.setNegativeButton("Cancel", (dialog, which) -> {
+                            });
+                            builder.create().show();
+                        });
+
+
+                        Log.d(TAG, "DocumentSnapshot data: " + document.getData());
+                    } else {
+                        Log.d(TAG, "No such document");
                     }
-                });
+                } else {
+                    Log.d(TAG, "get failed with ", task.getException());
+                }
+            }
+        });
+
     }
 
     public void onBindViewHolder(MyViewHolder holder, int position) {
@@ -285,90 +366,92 @@ public class CoinAdapter extends RecyclerView.Adapter<CoinAdapter.MyViewHolder> 
         getBankBalance(userEmail);
         SharedPreferences settings = obj.getSharedPreferences(preferencesFile,
                 Context.MODE_PRIVATE);
-        ShilToGold = Double.parseDouble(settings.getString("DolrToGold", ""));
-        DolrToGold = Double.parseDouble(settings.getString("PenyToGold", ""));
-        QuidToGold = Double.parseDouble(settings.getString("QuidToGold", ""));
-        PenyToGold = Double.parseDouble(settings.getString("ShilToGold", ""));
+//        ShilToGold = Double.parseDouble(settings.getString("DolrToGold", ""));
+//        DolrToGold = Double.parseDouble(settings.getString("PenyToGold", ""));
+//        QuidToGold = Double.parseDouble(settings.getString("QuidToGold", ""));
+//        PenyToGold = Double.parseDouble(settings.getString("ShilToGold", ""));
 
         //reading fromm firestore//
 
-
-
-        Wallet coin = coinList.get(position);
-        holder.coinCurrency.setText("Currency:\n"+coin.currency);
-        holder.dateCollected.setText("Date Collected:\n"+coin.date);
-        holder.value.setText("Value:\n"+Double.toString(coin.value));
+        setExchangeRates( holder,userEmail, position);
 
 
 
-        if(coin.currency.equals("SHIL")){
-            goldValue = ShilToGold * coin.value;
-        }
-        if(coin.currency.equals("DOLR")){
-            goldValue = DolrToGold * coin.value;
-        }
-        if(coin.currency.equals("PENY")){
-            goldValue = PenyToGold * coin.value;
-        }
-        if(coin.currency.equals("QUID")){
-            goldValue = QuidToGold * coin.value;
-        }
-        holder.estGold.setText("Gold Value:\n" + goldValue);
-//        holder.estGold.setText(goldValue.toString());
-
-
-        holder.buttonBank.setOnClickListener(v -> {
-
-
-            if(coin.currency.equals("SHIL")){
-                goldValue = ShilToGold * coin.value;
-            }
-            if(coin.currency.equals("DOLR")){
-                goldValue = DolrToGold * coin.value;
-            }
-            if(coin.currency.equals("PENY")){
-                goldValue = PenyToGold * coin.value;
-            }
-            if(coin.currency.equals("QUID")){
-                goldValue = QuidToGold * coin.value;
-            }
-            getBankCounter(goldValue,userEmail,coin.id,position);
-            Timber.d("Banking Coin with Gold value: %s", goldValue);
-
-        });
-
-        holder.gift.setOnClickListener(v -> {
-            if(coin.currency.equals("SHIL")){
-                goldValue = ShilToGold * coin.value;
-            }
-            if(coin.currency.equals("DOLR")){
-                goldValue = DolrToGold * coin.value;
-            }
-            if(coin.currency.equals("PENY")){
-                goldValue = PenyToGold * coin.value;
-            }
-            if(coin.currency.equals("QUID")){
-                goldValue = QuidToGold * coin.value;
-            }
-
-            // Open dialogue for email address
-
-            AlertDialog.Builder builder = new AlertDialog.Builder(obj)
-                    .setTitle("Gifting Coin")
-                    .setCancelable(true)
-                    .setView(R.layout.gift_layout);
-
-            builder.setPositiveButton("Send Gift", (dialog, which) -> {
-                AlertDialog test = (AlertDialog) dialog;
-                EditText userinput = test.findViewById(R.id.emailID);
-                        String giftEmail = userinput.getText().toString();
-                giftCoin(goldValue,userEmail,giftEmail,coin.id,position);
-
-            });
-            builder.setNegativeButton("Cancel", (dialog, which) -> {
-            });
-            builder.create().show();
-        });
+//        Wallet coin = coinList.get(position);
+//        holder.coinCurrency.setText("Currency:\n"+coin.currency);
+//        holder.dateCollected.setText("Date Collected:\n"+coin.date);
+//        holder.value.setText("Value:\n"+Double.toString(coin.value));
+//
+//
+//
+//        if(coin.currency.equals("SHIL")){
+//            goldValue = ShilToGold * coin.value;
+//        }
+//        if(coin.currency.equals("DOLR")){
+//            goldValue = DolrToGold * coin.value;
+//        }
+//        if(coin.currency.equals("PENY")){
+//            goldValue = PenyToGold * coin.value;
+//        }
+//        if(coin.currency.equals("QUID")){
+//            goldValue = QuidToGold * coin.value;
+//        }
+//        holder.estGold.setText("Gold Value:\n" + goldValue);
+////        holder.estGold.setText(goldValue.toString());
+//
+//
+//        holder.buttonBank.setOnClickListener(v -> {
+//
+//
+//            if(coin.currency.equals("SHIL")){
+//                goldValue = ShilToGold * coin.value;
+//            }
+//            if(coin.currency.equals("DOLR")){
+//                goldValue = DolrToGold * coin.value;
+//            }
+//            if(coin.currency.equals("PENY")){
+//                goldValue = PenyToGold * coin.value;
+//            }
+//            if(coin.currency.equals("QUID")){
+//                goldValue = QuidToGold * coin.value;
+//            }
+//            getBankCounter(goldValue,userEmail,coin.id,position);
+//            Timber.d("Banking Coin with Gold value: %s", goldValue);
+//
+//        });
+//
+//        holder.gift.setOnClickListener(v -> {
+//            if(coin.currency.equals("SHIL")){
+//                goldValue = ShilToGold * coin.value;
+//            }
+//            if(coin.currency.equals("DOLR")){
+//                goldValue = DolrToGold * coin.value;
+//            }
+//            if(coin.currency.equals("PENY")){
+//                goldValue = PenyToGold * coin.value;
+//            }
+//            if(coin.currency.equals("QUID")){
+//                goldValue = QuidToGold * coin.value;
+//            }
+//
+//            // Open dialogue for email address
+//
+//            AlertDialog.Builder builder = new AlertDialog.Builder(obj)
+//                    .setTitle("Gifting Coin")
+//                    .setCancelable(true)
+//                    .setView(R.layout.gift_layout);
+//
+//            builder.setPositiveButton("Send Gift", (dialog, which) -> {
+//                AlertDialog test = (AlertDialog) dialog;
+//                EditText userinput = test.findViewById(R.id.emailID);
+//                        String giftEmail = userinput.getText().toString();
+//                giftCoin(goldValue,userEmail,giftEmail,coin.id,position);
+//
+//            });
+//            builder.setNegativeButton("Cancel", (dialog, which) -> {
+//            });
+//            builder.create().show();
+//        });
 
     }
 

@@ -145,7 +145,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                         HashMap<String, Object> info = new HashMap<>();
                         info.put("GoldBank", 0.0);
                         info.put("SpareGold", 0.0);
-                        info.put("LastDownloadDate", " ");
+                        info.put("LastDownloadDate", "yyyy/mm/dd");
 
                         db.collection("Users").document(user.getEmail())
                                 .set(info)

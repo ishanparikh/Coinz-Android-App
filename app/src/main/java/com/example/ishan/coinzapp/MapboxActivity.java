@@ -73,7 +73,7 @@ public class MapboxActivity extends AppCompatActivity implements SensorEventList
     // today's date
     public String date = "";
     // for storing preferences
-    String preferencesFile = "MyPrefsFile";
+    private  final String preferencesFile = "MyPrefsFile";
     HashMap<String,TodaysMap> todaysMapList = new HashMap<>();
     HashMap<String,TodaysMap> activatedMapList = new HashMap<>();
     public static HashMap<String,TodaysMap> wallet = new HashMap<>();
@@ -203,7 +203,7 @@ public class MapboxActivity extends AppCompatActivity implements SensorEventList
         exchange.put("ShilToGold", s2g);
 
         db.collection("Users").document(emailID)
-                .set(exchange)
+                .update(exchange)
                 .addOnSuccessListener(aVoid -> Timber.d("Exchange rates uploaded"))
                 .addOnFailureListener(e -> Timber.w(e, "Error uploading exchange rate"));
     }
@@ -569,11 +569,12 @@ public class MapboxActivity extends AppCompatActivity implements SensorEventList
     @Override
     protected void onStart() {
         super.onStart();
-        SharedPreferences settings = getSharedPreferences(preferencesFile,
-                Context.MODE_PRIVATE);
+
+        SharedPreferences settings = getSharedPreferences(preferencesFile, Context.MODE_PRIVATE);
         // use ”” as the default value (this might be the first time the app is run)
         downloadDate = settings.getString("lastDownloadDate", "");
         Timber.d("[onStart] Recalled lastDownloadDate is ’" + downloadDate + "’");
+
         if (locationEngine != null) {
             locationEngine.requestLocationUpdates();
         }
@@ -600,8 +601,7 @@ public class MapboxActivity extends AppCompatActivity implements SensorEventList
         downloadDate = date;
         activityRunning = false;
         // All objects are from android.context.Context
-        SharedPreferences settings = getSharedPreferences(preferencesFile,
-                Context.MODE_PRIVATE);
+        SharedPreferences settings = getSharedPreferences(preferencesFile, Context.MODE_PRIVATE);
         // We need an Editor object to make preference changes.
         SharedPreferences.Editor editor = settings.edit();
         editor.putString("lastDownloadDate", downloadDate);
