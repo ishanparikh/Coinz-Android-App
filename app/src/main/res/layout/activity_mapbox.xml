@@ -21,6 +21,24 @@
 
     </com.mapbox.mapboxsdk.maps.MapView>
 
+    <TextView
+        android:id="@+id/distCovered"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_gravity="top|center"
+        android:layout_marginEnd="8dp"
+
+        android:layout_marginStart="8dp"
+        android:layout_marginTop="8dp"
+        android:paddingTop="10dp"
+        android:text="Distance Covered:"
+        android:textAlignment="center"
+        android:textAllCaps="true"
+        android:textStyle="bold"
+        mapbox:layout_constraintEnd_toEndOf="parent"
+        mapbox:layout_constraintStart_toStartOf="parent"
+        mapbox:layout_constraintTop_toTopOf="parent" />
+
 
     <com.github.clans.fab.FloatingActionMenu
         android:id="@+id/menu"

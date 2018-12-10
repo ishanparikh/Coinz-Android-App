@@ -4,6 +4,7 @@ import android.content.Context;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.provider.Settings;
+import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.View;
@@ -11,8 +12,13 @@ import android.content.Intent;
 import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
+
+import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.firestore.DocumentSnapshot;
+import com.google.firebase.firestore.FirebaseFirestore;
 
 import timber.log.Timber;
 
@@ -20,9 +26,12 @@ public class ProfileActivity extends AppCompatActivity implements View.OnClickLi
 {
     //firebase auth object
     private FirebaseAuth firebaseAuth;
-
+    FirebaseFirestore db = FirebaseFirestore.getInstance();
     private Button buttonLogout;
     private Button buttonOpenMap;
+    double distWalked;
+    private FirebaseUser user;
+    private TextView distance;
 
     public class NotLoggingTree extends Timber.Tree {
         @Override
@@ -48,6 +57,43 @@ public class ProfileActivity extends AppCompatActivity implements View.OnClickLi
                     haveConnectedMobile = true;
         }
         return haveConnectedWifi || haveConnectedMobile;
+    }
+
+    public void getDistanceWalked(String emailID){
+        db.collection("Users").document(emailID)
+                .get().addOnCompleteListener(new OnCompleteListener<DocumentSnapshot>() {
+            @Override
+            public void onComplete(@NonNull Task<DocumentSnapshot> task) {
+                if (task.isSuccessful()) {
+                    DocumentSnapshot document = task.getResult();
+                    assert document != null;
+                    if (document.exists()) {
+                        TextView textViewUserEmail = findViewById(R.id.textViewUserEmail);
+                        buttonLogout =  findViewById(R.id.buttonLogout);
+                        buttonOpenMap = findViewById(R.id.buttonOpenMap);
+                        distance = findViewById(R.id.distance);
+
+
+                        //displaying logged in user name
+                        assert user != null;
+                        textViewUserEmail.setText("Welcome "+user.getEmail());
+
+                        //adding listener to button
+                        buttonLogout.setOnClickListener(ProfileActivity.this);
+
+                        //listener to OpenMap
+                        buttonOpenMap.setOnClickListener(ProfileActivity.this);
+                        distWalked = document.getDouble("Distance");
+                        distance.setText("Distance Covered:\n" + Math.round(distWalked)+"m");
+                        Timber.d("DocumentSnapshot data: %s", document.getData());
+                    } else {
+                        Timber.d("No such document");
+                    }
+                } else {
+                    Timber.d(task.getException(), "get failed with ");
+                }
+            }
+        });
     }
 
 
@@ -79,12 +125,14 @@ public class ProfileActivity extends AppCompatActivity implements View.OnClickLi
         }
 
         //getting current user
-        FirebaseUser user = firebaseAuth.getCurrentUser();
+        user = firebaseAuth.getCurrentUser();
 
         //initializing views
         TextView textViewUserEmail = findViewById(R.id.textViewUserEmail);
         buttonLogout =  findViewById(R.id.buttonLogout);
         buttonOpenMap = findViewById(R.id.buttonOpenMap);
+        distance = findViewById(R.id.distance);
+
 
         //displaying logged in user name
         assert user != null;
@@ -95,6 +143,22 @@ public class ProfileActivity extends AppCompatActivity implements View.OnClickLi
 
         //listener to OpenMap
         buttonOpenMap.setOnClickListener(this);
+
+        getDistanceWalked(user.getEmail());
+        Timber.d("Distance History is :" + distWalked);
+
+
+//        String d = getIntent().getStringExtra("Distance");
+//        if(d == null){
+//
+//
+//        }else{
+//            double dist = Double.parseDouble(d);
+//            distance.setText("Distance Covered:\n" + Math.round(dist)+"m");
+//        }
+
+
+
     }
 
     @Override

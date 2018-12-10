@@ -5,12 +5,12 @@ import com.mapbox.mapboxsdk.geometry.LatLng;
 
 public class TodaysMap {
 
-    String date;
-    String currency;
-    String id;
-    double value;
-    LatLng loc;
-    String symbol;
+    public String date;
+    public String currency;
+    public String id;
+    public double value;
+    public LatLng loc;
+    public String symbol;
     TodaysMap(String d, String curr, String coinId, double val,LatLng l,String sym){
         date = d;
         currency = curr;
@@ -20,4 +20,5 @@ public class TodaysMap {
         symbol = sym;
 
     }
+    TodaysMap(){};
 }

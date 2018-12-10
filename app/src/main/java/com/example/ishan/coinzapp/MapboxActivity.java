@@ -15,10 +15,13 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
+import android.widget.TextView;
 import android.widget.Toast;
 
+import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.DocumentSnapshot;
@@ -74,11 +77,9 @@ public class MapboxActivity extends AppCompatActivity implements SensorEventList
     public String date = "";
     // for storing preferences
     public  final String preferencesFile = "MyPrefsFile";
-
     HashMap<String,TodaysMap> todaysMapList = new HashMap<>();
     HashMap<String,TodaysMap> activatedMapList = new HashMap<>();
     HashMap<String,TodaysMap> wallet = new HashMap<>();
-
     DownloadFileTask urlObj = new DownloadFileTask();
     public String markerColour;
     FirebaseFirestore db = FirebaseFirestore.getInstance();
@@ -93,6 +94,7 @@ public class MapboxActivity extends AppCompatActivity implements SensorEventList
     public String usrDD;
     public double distWalked = 0;
     com.github.clans.fab.FloatingActionButton WalletIcon, HomeIcon;
+    private TextView distanceCovered;
 
     public class NotLoggingTree extends Timber.Tree {
         @Override
@@ -275,6 +277,36 @@ public class MapboxActivity extends AppCompatActivity implements SensorEventList
                 .addOnFailureListener(e -> Timber.tag(tag).w(e, "Error updating document"));
     }
 
+    public void pushDistanceWalked(String emailID, double distance){
+        HashMap dist = new HashMap();
+        dist.put("Distance", distance);
+        db.collection("Users").document(emailID)
+                .update(dist)
+                .addOnSuccessListener((OnSuccessListener<Void>) aVoid -> Timber.d("User Distance walked updated successfully!"))
+                .addOnFailureListener(e -> Timber.tag(tag).w(e, "Error updating document"));
+
+    }
+
+    public void getDistanceWalked(String emailID){
+        db.collection("Users").document(emailID)
+                .get().addOnCompleteListener(new OnCompleteListener<DocumentSnapshot>() {
+            @Override
+            public void onComplete(@NonNull Task<DocumentSnapshot> task) {
+                if (task.isSuccessful()) {
+                    DocumentSnapshot document = task.getResult();
+                    if (document.exists()) {
+                        distWalked = document.getDouble("Distance");
+                        Timber.d("DocumentSnapshot data: %s", document.getData());
+                    } else {
+                        Timber.d("No such document");
+                    }
+                } else {
+                    Timber.d(task.getException(), "get failed with ");
+                }
+            }
+        });
+    }
+
     public void updateWallet(String coinID){
         //Add to FireStore
         TodaysMap newCoin = wallet.get(coinID);
@@ -309,12 +341,18 @@ public class MapboxActivity extends AppCompatActivity implements SensorEventList
         if(view == WalletIcon){
             Toast.makeText(MapboxActivity.this,"WalletIcon",Toast.LENGTH_SHORT).show();
             startActivity(new Intent(this, WalletActivity.class));
+//
+
         }
 
         if(view == HomeIcon)
         {
             Toast.makeText(MapboxActivity.this,"HomeIcon ",Toast.LENGTH_SHORT).show();
-            startActivity(new Intent(this, ProfileActivity.class));
+//            startActivity(new Intent(this, ProfileActivity.class));
+            Intent intent = new Intent(MapboxActivity.this, ProfileActivity.class);
+            Timber.d("Distance History is :" + distWalked);
+            intent.putExtra("Distance",distWalked);
+            startActivity(intent);
         }
 
     }
@@ -330,6 +368,7 @@ public class MapboxActivity extends AppCompatActivity implements SensorEventList
         Mapbox.getInstance(this, getString(R.string.access_token));
         setContentView(R.layout.activity_mapbox);
         sensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
+        distanceCovered = findViewById(R.id.distCovered);
         mapView = findViewById((R.id.mapView));
         mapView.onCreate(savedInstanceState);
         mapView.getMapAsync(this);
@@ -338,6 +377,8 @@ public class MapboxActivity extends AppCompatActivity implements SensorEventList
         HomeIcon.setOnClickListener(this);
         WalletIcon.setOnClickListener(this);
         user = FirebaseAuth.getInstance().getCurrentUser();
+        getDistanceWalked(user.getEmail());
+        Timber.d("Distance History is :" + distWalked);
 
     }
 
@@ -345,6 +386,7 @@ public class MapboxActivity extends AppCompatActivity implements SensorEventList
 
     @Override
     public void onMapReady(MapboxMap mapboxMap) {
+
         if (mapboxMap == null) {
             Timber.d("[onMapReady] mapBox is null");
         } else {
@@ -355,12 +397,14 @@ public class MapboxActivity extends AppCompatActivity implements SensorEventList
             }else {
                 Toast.makeText(this, "Count sensor not available!", Toast.LENGTH_SHORT).show();
             }
+
             activityRunning = true;
             map = mapboxMap;
             map.getUiSettings().setCompassEnabled(true);
             map.getUiSettings().setZoomControlsEnabled(true);
             // Make location information available
             enableLocation();
+            distanceCovered.setText("Distance Covered is: \n" + Math.round(distWalked) +"m");
             String pattern = "yyyy/MM/dd";
             @SuppressLint("SimpleDateFormat") SimpleDateFormat simpleDateFormat = new SimpleDateFormat(pattern);
             date = simpleDateFormat.format(new Date());
@@ -539,7 +583,8 @@ public class MapboxActivity extends AppCompatActivity implements SensorEventList
             if (originLocation != null)
             {
                 distWalked += originLocation.distanceTo(location);
-                Log.d("MapboxActivity.java","distWalked =" + distWalked);
+                Log.d("MapboxActivity.java","Distance Covered = " + distWalked);
+                distanceCovered.setText("Distance Covered is: \n" +  Math.round(distWalked) +"m");
 
             }
             originLocation = location;
@@ -619,6 +664,7 @@ public class MapboxActivity extends AppCompatActivity implements SensorEventList
             locationLayerPlugin.onStop();
 
         mapView.onStop();
+        pushDistanceWalked(user.getEmail(), distWalked);
     }
 
     @Override
@@ -641,6 +687,8 @@ public class MapboxActivity extends AppCompatActivity implements SensorEventList
         }
 
         mapView.onDestroy();
+
+
 
     }
 

@@ -146,6 +146,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                         info.put("GoldBank", 0.0);
                         info.put("SpareGold", 0.0);
                         info.put("LastDownloadDate", "yyyy/mm/dd");
+                        info.put("Distance",0.0);
 
                         db.collection("Users").document(user.getEmail())
                                 .set(info)

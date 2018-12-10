@@ -51,7 +51,8 @@ public class WalletActivity extends AppCompatActivity   {
                             Wallet coin = new Wallet(date, curr,document.getId(),vals);
                             coinList.add(coin);
                         }
-                        coinAdapter = new CoinAdapter(coinList, WalletActivity.this);
+                        coinAdapter = new
+                                CoinAdapter(coinList, WalletActivity.this);
                         recyclerView.setAdapter(coinAdapter);
                     } else {
                         Timber.d(task.getException(), "Error getting documents: ");
