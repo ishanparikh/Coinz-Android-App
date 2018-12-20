@@ -112,6 +112,9 @@ public class LogInActivity extends AppCompatActivity implements View.OnClickList
                         finish();
                         startActivity(new Intent(getApplicationContext(), ProfileActivity.class));
                     }
+                    if(!task.isSuccessful()){
+                        Toast.makeText(this, "User has not registered, Sign Up instead", Toast.LENGTH_LONG).show();
+                    }
                 });
 
     }

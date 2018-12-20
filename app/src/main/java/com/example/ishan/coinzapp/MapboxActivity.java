@@ -4,10 +4,6 @@ import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.hardware.Sensor;
-import android.hardware.SensorEvent;
-import android.hardware.SensorEventListener;
-import android.hardware.SensorManager;
 import android.location.Location;
 import android.os.PersistableBundle;
 import android.support.annotation.NonNull;
@@ -17,7 +13,6 @@ import android.util.Log;
 import android.view.View;
 import android.widget.TextView;
 import android.widget.Toast;
-
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
@@ -61,7 +56,8 @@ import java.util.concurrent.ExecutionException;
 import timber.log.Timber;
 
 
-public class MapboxActivity extends AppCompatActivity implements SensorEventListener,OnMapReadyCallback, MapboxMap.OnMapClickListener,View.OnClickListener,
+public class MapboxActivity extends AppCompatActivity implements OnMapReadyCallback,
+        MapboxMap.OnMapClickListener,View.OnClickListener,
         LocationEngineListener, PermissionsListener {
 
     public MapView mapView;
@@ -84,13 +80,10 @@ public class MapboxActivity extends AppCompatActivity implements SensorEventList
     public String markerColour;
     FirebaseFirestore db = FirebaseFirestore.getInstance();
     private FirebaseUser user;
-    public  int stepCount;
     public String ShilToGold;
     public String DolrToGold;
     public String QuidToGold;
     public String PenyToGold;
-    public SensorManager sensorManager;
-    boolean activityRunning;
     public String usrDD;
     public double distWalked = 0;
     com.github.clans.fab.FloatingActionButton WalletIcon, HomeIcon;
@@ -103,13 +96,22 @@ public class MapboxActivity extends AppCompatActivity implements SensorEventList
         }
     }
 
+    /*
+    * Render Map is called whenever the Mapbox map needs to be rendered
+    * This happens when:
+    * 1. Coin is picked up - PickUpCoin
+    * 2. When a Map is loaded for the first time a in the day
+    * 3. When a user returns to the game, after having played, on that day
+    * */
 
     public void renderMap(HashMap<String,TodaysMap> todaysMapList){
         map.clear();
+        // todaysMapList contains the required list of coins to render onto map
         for (String i : todaysMapList.keySet()){
 
+            //getting the marker colour
+
             String currCoin = todaysMapList.get(i).currency;
-            //String currCoin = f.properties().get("currency").toString().replaceAll("\"", "");
             switch (currCoin) {
                 case "SHIL":
                     markerColour = "blue" + todaysMapList.get(i).symbol;
@@ -125,8 +127,7 @@ public class MapboxActivity extends AppCompatActivity implements SensorEventList
                     markerColour = "red" + todaysMapList.get(i).symbol;
                     break;
             }
-
-
+            // creating marker and adding to map
             int resId = this.getResources().getIdentifier(markerColour, "drawable", this.getPackageName());
             map.addMarker(new MarkerOptions()
                     .position(new LatLng(todaysMapList.get(i).loc.getLatitude(),todaysMapList.get(i).loc.getLongitude()))
@@ -143,6 +144,7 @@ public class MapboxActivity extends AppCompatActivity implements SensorEventList
         double usrLat = originLocation.getLatitude();
         double usrLong = originLocation.getLongitude();
         List<String> rmID = new ArrayList<>();
+        // Checking for every coin, if its within 25m radius
         for (String i : todaysMapList.keySet()){
 
             double markerLat = todaysMapList.get(i).loc.getLatitude();
@@ -161,19 +163,22 @@ public class MapboxActivity extends AppCompatActivity implements SensorEventList
                 updateWallet(i);
             }
         }
+        // update todaysMapList by removing the picked up coin
         for (String i : rmID ){
             todaysMapList.remove(i);
             updateDailyCoinList(i);
-
             Timber.d("New size of MapList:%s", todaysMapList.size());
         }
+        // re-render the map
         if(rmID.size() != 0){
         renderMap(todaysMapList);
 
         }
     }
 
-    public void getaAtivatedMapList(String emailID){
+/*
+* */
+    public void getAtivatedMapList(String emailID){
         db.collection("Users").document(Objects.requireNonNull(emailID)).collection("DailyCoinList")
                 .get()
                 .addOnCompleteListener(task -> {
@@ -254,9 +259,8 @@ public class MapboxActivity extends AppCompatActivity implements SensorEventList
 
                             }else {
                                 // User has already been active on current day
-                                getaAtivatedMapList(emailID);
+                                getAtivatedMapList(emailID);
 
-//                                renderMap(activatedMapList);
                             }
 
                         } else {
@@ -367,7 +371,6 @@ public class MapboxActivity extends AppCompatActivity implements SensorEventList
             Timber.plant(new NotLoggingTree());
         Mapbox.getInstance(this, getString(R.string.access_token));
         setContentView(R.layout.activity_mapbox);
-        sensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
         distanceCovered = findViewById(R.id.distCovered);
         mapView = findViewById((R.id.mapView));
         mapView.onCreate(savedInstanceState);
@@ -389,16 +392,11 @@ public class MapboxActivity extends AppCompatActivity implements SensorEventList
 
         if (mapboxMap == null) {
             Timber.d("[onMapReady] mapBox is null");
-        } else {
-            Sensor countSensor = sensorManager.getDefaultSensor(Sensor.TYPE_STEP_COUNTER);
-            if(countSensor != null){
-                sensorManager.registerListener(this,countSensor,SensorManager.SENSOR_DELAY_UI);
+        }
+            // Check if Shared Preferences is working
+            SharedPreferences settings = getSharedPreferences(preferencesFile, Context.MODE_PRIVATE);
+            Log.d(tag,settings.getString("lastDownloadDate", ""));
 
-            }else {
-                Toast.makeText(this, "Count sensor not available!", Toast.LENGTH_SHORT).show();
-            }
-
-            activityRunning = true;
             map = mapboxMap;
             map.getUiSettings().setCompassEnabled(true);
             map.getUiSettings().setZoomControlsEnabled(true);
@@ -448,85 +446,10 @@ public class MapboxActivity extends AppCompatActivity implements SensorEventList
                          f.getStringProperty("marker-symbol"));
 
                  todaysMapList.put(today.id, today);
-//                 String currCoin = f.getStringProperty("currency");
-//                //String currCoin = f.properties().get("currency").toString().replaceAll("\"", "");
-//                if ( currCoin.equals("SHIL")) {
-//                    markerColour ="blue"+ f.getStringProperty("marker-symbol");
-//                }else if(currCoin.equals("DOLR")){
-//                    markerColour ="green"+f.getStringProperty("marker-symbol");;
-//
-//                }else if(currCoin.equals("QUID")) {
-//                    markerColour = "yellow" + f.getStringProperty("marker-symbol");;
-//                }else if(currCoin.equals("PENY")) {
-//                    markerColour = "red" + f.getStringProperty("marker-symbol");;
-//                }
-//                Log.d(tag,"MarkerColour is: "+ markerColour);
-//
-//                int resId = this.getResources().getIdentifier(markerColour, "drawable", this.getPackageName());
-//
-//                if (f.geometry() instanceof Point) {
-//
-//                     //List<Double> coordinates = ((Point) f.geometry()).coordinates();
-//                    Point pt = (Point) f.geometry();
-////                    markerColour = f.properties().get("currency").toString().replaceAll("\"", "") +
-////                    Integer.parseInt(f.properties().get("value").toString().replaceAll("\"", ""));
-//
-//
-//                     map.addMarker(new MarkerOptions()
-//                            .position(new LatLng(pt.latitude(), pt.longitude()))
-//                            .title( f.properties().get("currency").toString().replaceAll("\"", ""))
-//                            .snippet((f.properties().get("value").toString().replaceAll("\"", "")))
-//                            .icon(IconFactory.getInstance(this).fromResource(resId))
-//                    );
-//
-////                    Log.d(tag,"Displaying: "+count+ map.getMarkers().toString());
-////                    count +=1;
-//                }
-
 
             }
             getUserDownloadDate(user.getEmail());
 
-
-//            renderMap(todaysMapList);
-
-//            SharedPreferences settings = getSharedPreferences(preferencesFile,
-//                    Context.MODE_PRIVATE);
-//            // We need an Editor object to make preference changes.
-//            SharedPreferences.Editor editor = settings.edit();
-//
-//            getUserDownloadDate(user.getEmail());
-//
-//            if(!downloadDate.equals(date)){
-//
-//                pushDailyCoinList();
-//
-//                HashMap<String, Object> bc = new HashMap<>();
-//                bc.put("BankCounter", 0);
-//                db.collection("Users").document(user.getEmail())
-//                        .update(bc)
-//                        .addOnSuccessListener(new OnSuccessListener<Void>() {
-//                            @Override
-//                            public void onSuccess(Void aVoid) {
-//                                Log.d(tag, "Bank counter created for new day ");
-//                            }
-//                        })
-//                        .addOnFailureListener(new OnFailureListener() {
-//                            @Override
-//                            public void onFailure(@NonNull Exception e) {
-//                                Log.w(tag, "Bank counter NOT created for new day", e);
-//                            }
-//                        });
-//
-//
-//                editor.putString("DolrToGold", DolrToGold);
-//                editor.putString("PenyToGold", PenyToGold);
-//                editor.putString("QuidToGold", QuidToGold);
-//                editor.putString("ShilToGold", ShilToGold);
-//                editor.apply();
-//                Log.w(tag, "Daily Map Downloaded" + downloadDate + "\t"+date );
-//            }
-        }
      }
 
     private void enableLocation() {
@@ -649,7 +572,7 @@ public class MapboxActivity extends AppCompatActivity implements SensorEventList
         super.onStop();
         Timber.d("[onStop] Storing lastDownloadDate of %s", downloadDate);
         downloadDate = date;
-        activityRunning = false;
+//        activityRunning = false;
         // All objects are from android.context.Context
         SharedPreferences settings = getSharedPreferences(preferencesFile, Context.MODE_PRIVATE);
         // We need an Editor object to make preference changes.
@@ -688,27 +611,11 @@ public class MapboxActivity extends AppCompatActivity implements SensorEventList
 
         mapView.onDestroy();
 
-
-
     }
 
     @Override
     public void onMapClick(@NonNull LatLng point) {
-        //    destinationMarker = map.addMarker(new MarkerOptions().position(point));
-        //    destPos = Point.fromLngLat(point.getLongitude(),point.getLatitude());
-        //    origPos = Point.fromLngLat(originLocation.getLongitude(),originLocation.getLatitude());
     }
 
-    @Override
-    public void onSensorChanged(SensorEvent event) {
-        if(activityRunning){
-            stepCount = (int) event.values[ 0];
-        }
 
-    }
-
-    @Override
-    public void onAccuracyChanged(Sensor sensor, int accuracy) {
-
-    }
 }

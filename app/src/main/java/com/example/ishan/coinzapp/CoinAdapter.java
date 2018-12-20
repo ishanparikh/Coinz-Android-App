@@ -167,6 +167,7 @@ public class CoinAdapter extends RecyclerView.Adapter<CoinAdapter.MyViewHolder> 
                             coinList.remove(position);
                             notifyItemRemoved(position);
                             notifyItemRangeChanged(position, coinList.size());
+                            Toast.makeText(obj, "Successfully gifted the coin to your friend", Toast.LENGTH_SHORT).show();
 
                         } else {
 
@@ -181,7 +182,7 @@ public class CoinAdapter extends RecyclerView.Adapter<CoinAdapter.MyViewHolder> 
 
     }
 
-    public void getBankCounter(double gold, String emailID,String coinID, int pos){
+    public void getBankCounter(double gold, String emailID,String giftID,String coinID, int pos, boolean gift){
         db.collection("Users").document(emailID)
                 .get().addOnCompleteListener(task -> {
                     if (task.isSuccessful()) {
@@ -189,23 +190,37 @@ public class CoinAdapter extends RecyclerView.Adapter<CoinAdapter.MyViewHolder> 
                         assert document != null;
                         if (document.exists()) {
                             bankCounter = Integer.parseInt(Objects.requireNonNull(document.get("BankCounter")).toString());
+                            if(!gift){
+                                    bankCounter +=1;
+                            }
 
-                            bankCounter +=1;
                             document.getReference().update("BankCounter", bankCounter).addOnSuccessListener(aVoid -> {
                                 TextView storeLoc = ((Activity)obj).findViewById(R.id.StoreLoc);
                                 TextView coinsLeft = ((Activity)obj).findViewById(R.id.CoinsLeft);
 
-                                if (bankCounter < 25) {
+                                if (bankCounter <= 25 && !gift) {
                                     bankCoin(goldValue,emailID,coinID,pos);
                                     storeLoc.setText("Storing In: Bank");
                                     coinsLeft.setText("Coins Banked: "+(bankCounter));
                                 }
-                                else {
+                                if(bankCounter > 25 && gift){
+//                                    giftCoin(gold,);
+                                    giftCoin(goldValue,emailID,giftID,coinID,pos);
+                                    storeLoc.setText("Daily Quota Reached");
+                                    coinsLeft.setText("HODL or Gift Now");
+
+                                }
+                                if(bankCounter <= 25 && gift){
+                                    Toast.makeText(obj, "Can only gift after exceeding daily quota", Toast.LENGTH_SHORT).show();
+
+                                }
+
+                                if(bankCounter > 25 && !gift) {
                                     // put in spare change
 //                                    addToSpareGold(goldValue,emailID,coinID);
                                     Toast.makeText(obj, "Cannot Bank any more coins", Toast.LENGTH_SHORT).show();
                                     storeLoc.setText("Daily Quota Reached");
-                                    coinsLeft.setText("Coins left to bank: 0");
+                                    coinsLeft.setText("HODL or Gift Now");
                                 }
                             })
                             .addOnFailureListener(e -> Timber.tag(TAG).w(e, "Error incrementing counter"));
@@ -309,7 +324,7 @@ public class CoinAdapter extends RecyclerView.Adapter<CoinAdapter.MyViewHolder> 
                             if(coin.currency.equals("QUID")){
                                 goldValue = QuidToGold * coin.value;
                             }
-                            getBankCounter(goldValue,email,coin.id,position);
+                            getBankCounter(goldValue,email,"",coin.id,position,false);
                             Timber.d("Banking Coin with Gold value: %s", goldValue);
 
                         });
@@ -339,7 +354,8 @@ public class CoinAdapter extends RecyclerView.Adapter<CoinAdapter.MyViewHolder> 
                                 AlertDialog test = (AlertDialog) dialog;
                                 EditText userinput = test.findViewById(R.id.emailID);
                                 String giftEmail = userinput.getText().toString();
-                                giftCoin(goldValue,email,giftEmail,coin.id,position);
+                                getBankCounter(goldValue,email,giftEmail,coin.id,position,true);
+//                                giftCoin(goldValue,email,giftEmail,coin.id,position);
 
                             });
                             builder.setNegativeButton("Cancel", (dialog, which) -> {
