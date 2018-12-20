@@ -28,14 +28,6 @@ public class WalletActivity extends AppCompatActivity   {
     TextView coinsLeft;
     ImageButton homeButton;
 
-    public class NotLoggingTree extends Timber.Tree {
-        @Override
-        protected void log(final int priority, final String tag, final String message, final Throwable throwable) {
-
-        }
-    }
-
-
     public void getData() {
 
          db.collection("Users").document(Objects.requireNonNull(user.getEmail())).collection("Wallet")
@@ -48,7 +40,7 @@ public class WalletActivity extends AppCompatActivity   {
                             String date = Objects.requireNonNull(document.get("date")).toString();
                             Double vals = (Double) document.get("value");
 
-                            Wallet coin = new Wallet(date, curr,document.getId(),vals);
+                            @SuppressWarnings("ConstantConditions") Wallet coin = new Wallet(date, curr,document.getId(),vals);
                             coinList.add(coin);
                         }
                         coinAdapter = new

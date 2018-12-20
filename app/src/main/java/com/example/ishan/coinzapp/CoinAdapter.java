@@ -3,7 +3,6 @@ package com.example.ishan.coinzapp;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.content.SharedPreferences;
 import android.support.annotation.NonNull;
 import android.support.v7.widget.RecyclerView;
@@ -15,7 +14,6 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
-
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
@@ -24,9 +22,6 @@ import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
-import com.google.firebase.firestore.QueryDocumentSnapshot;
-import com.google.firebase.firestore.QuerySnapshot;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -34,22 +29,23 @@ import java.util.Objects;
 
 import timber.log.Timber;
 
+@SuppressWarnings("ALL")
 public class CoinAdapter extends RecyclerView.Adapter<CoinAdapter.MyViewHolder>  {
 
-    public String TAG = "CoinAdapter.java";
-    public FirebaseFirestore db = FirebaseFirestore.getInstance();
-    public static List<Wallet> coinList = new ArrayList<>();
-    public double ShilToGold ;
-    public double DolrToGold ;
-    public double QuidToGold ;
-    public double PenyToGold ;
-    public double goldValue;
-    public double goldBank;
-    public double spareGold;
+    private String TAG = "CoinAdapter.java";
+    private FirebaseFirestore db = FirebaseFirestore.getInstance();
+    private static List<Wallet> coinList = new ArrayList<>();
+    private double ShilToGold ;
+    private double DolrToGold ;
+    private double QuidToGold ;
+    private double PenyToGold ;
+    private double goldValue;
+    private double goldBank;
+    private double spareGold;
     public String date;
     private FirebaseUser user;
-    public int bankCounter;
-    String preferencesFile = "MyPrefsFile";
+    private int bankCounter;
+    private String preferencesFile = "MyPrefsFile";
     private Context obj;
 
     public class NotLoggingTree extends Timber.Tree {
@@ -58,6 +54,11 @@ public class CoinAdapter extends RecyclerView.Adapter<CoinAdapter.MyViewHolder> 
 
         }
     }
+
+    /**
+     * Used to get User's current bank balance
+     * @param emailID
+     */
 
     private void getBankBalance(String emailID){
         db.collection("Users").document(emailID)
@@ -80,6 +81,14 @@ public class CoinAdapter extends RecyclerView.Adapter<CoinAdapter.MyViewHolder> 
                 });
 
     }
+
+    /**
+     * Called when user wants to bank a particular coin.
+     * @param gold
+     * @param emailID
+     * @param coinID
+     * @param position
+     */
     public void bankCoin(double gold, String emailID,String coinID,int position){
         goldBank += gold;
         HashMap goldBankMap = new HashMap();
@@ -102,6 +111,11 @@ public class CoinAdapter extends RecyclerView.Adapter<CoinAdapter.MyViewHolder> 
 
     }
 
+    /**
+     * Called when user wants to gift coin to friend
+     * @param receivedAmt
+     * @param emailID
+     */
 
     private void depositGift(double receivedAmt, String emailID){
 
@@ -119,10 +133,12 @@ public class CoinAdapter extends RecyclerView.Adapter<CoinAdapter.MyViewHolder> 
 
     }
 
-
-
-
-
+    /**
+     * @deprecated class no longer used due to change in design implementation
+     * @param gold
+     * @param emailID
+     * @param coinID
+     */
     public void addToSpareGold(double gold, String emailID,String coinID){
         spareGold += gold;
         HashMap spareGoldMap = new HashMap();
@@ -153,6 +169,14 @@ public class CoinAdapter extends RecyclerView.Adapter<CoinAdapter.MyViewHolder> 
                 .addOnFailureListener(e -> Timber.tag(TAG).w(e, "Error deleting document"));
     }
 
+    /**
+     * Function check if user has banked 25 coins for the day and then gifts coin
+     * @param gold
+     * @param userID
+     * @param giftID receiver of coin, receives gold
+     * @param coinID
+     * @param position
+     */
     public void giftCoin(double gold, String userID,String giftID,String coinID,int position){
         db.collection("Users").document(giftID)
                 .get().addOnCompleteListener(task -> {
@@ -182,6 +206,15 @@ public class CoinAdapter extends RecyclerView.Adapter<CoinAdapter.MyViewHolder> 
 
     }
 
+    /**
+     * Function used to check if user can bank or gift coin
+     * @param gold
+     * @param emailID
+     * @param giftID
+     * @param coinID
+     * @param pos
+     * @param gift - boolean value, true when user can gist
+     */
     public void getBankCounter(double gold, String emailID,String giftID,String coinID, int pos, boolean gift){
         db.collection("Users").document(emailID)
                 .get().addOnCompleteListener(task -> {
@@ -217,7 +250,7 @@ public class CoinAdapter extends RecyclerView.Adapter<CoinAdapter.MyViewHolder> 
 
                                 if(bankCounter > 25 && !gift) {
                                     // put in spare change
-//                                    addToSpareGold(goldValue,emailID,coinID);
+                                    // addToSpareGold(goldValue,emailID,coinID);
                                     Toast.makeText(obj, "Cannot Bank any more coins", Toast.LENGTH_SHORT).show();
                                     storeLoc.setText("Daily Quota Reached");
                                     coinsLeft.setText("HODL or Gift Now");
@@ -238,6 +271,9 @@ public class CoinAdapter extends RecyclerView.Adapter<CoinAdapter.MyViewHolder> 
     }
 
 
+    /**
+     * Below class is used to create the display for the wallet
+     */
     public class MyViewHolder extends RecyclerView.ViewHolder {
         public TextView coinCurrency, value, estGold, dateCollected;
         private Button buttonBank;
@@ -382,92 +418,7 @@ public class CoinAdapter extends RecyclerView.Adapter<CoinAdapter.MyViewHolder> 
         getBankBalance(userEmail);
         SharedPreferences settings = obj.getSharedPreferences(preferencesFile,
                 Context.MODE_PRIVATE);
-//        ShilToGold = Double.parseDouble(settings.getString("DolrToGold", ""));
-//        DolrToGold = Double.parseDouble(settings.getString("PenyToGold", ""));
-//        QuidToGold = Double.parseDouble(settings.getString("QuidToGold", ""));
-//        PenyToGold = Double.parseDouble(settings.getString("ShilToGold", ""));
-
-        //reading fromm firestore//
-
         setExchangeRates( holder,userEmail, position);
-
-
-
-//        Wallet coin = coinList.get(position);
-//        holder.coinCurrency.setText("Currency:\n"+coin.currency);
-//        holder.dateCollected.setText("Date Collected:\n"+coin.date);
-//        holder.value.setText("Value:\n"+Double.toString(coin.value));
-//
-//
-//
-//        if(coin.currency.equals("SHIL")){
-//            goldValue = ShilToGold * coin.value;
-//        }
-//        if(coin.currency.equals("DOLR")){
-//            goldValue = DolrToGold * coin.value;
-//        }
-//        if(coin.currency.equals("PENY")){
-//            goldValue = PenyToGold * coin.value;
-//        }
-//        if(coin.currency.equals("QUID")){
-//            goldValue = QuidToGold * coin.value;
-//        }
-//        holder.estGold.setText("Gold Value:\n" + goldValue);
-////        holder.estGold.setText(goldValue.toString());
-//
-//
-//        holder.buttonBank.setOnClickListener(v -> {
-//
-//
-//            if(coin.currency.equals("SHIL")){
-//                goldValue = ShilToGold * coin.value;
-//            }
-//            if(coin.currency.equals("DOLR")){
-//                goldValue = DolrToGold * coin.value;
-//            }
-//            if(coin.currency.equals("PENY")){
-//                goldValue = PenyToGold * coin.value;
-//            }
-//            if(coin.currency.equals("QUID")){
-//                goldValue = QuidToGold * coin.value;
-//            }
-//            getBankCounter(goldValue,userEmail,coin.id,position);
-//            Timber.d("Banking Coin with Gold value: %s", goldValue);
-//
-//        });
-//
-//        holder.gift.setOnClickListener(v -> {
-//            if(coin.currency.equals("SHIL")){
-//                goldValue = ShilToGold * coin.value;
-//            }
-//            if(coin.currency.equals("DOLR")){
-//                goldValue = DolrToGold * coin.value;
-//            }
-//            if(coin.currency.equals("PENY")){
-//                goldValue = PenyToGold * coin.value;
-//            }
-//            if(coin.currency.equals("QUID")){
-//                goldValue = QuidToGold * coin.value;
-//            }
-//
-//            // Open dialogue for email address
-//
-//            AlertDialog.Builder builder = new AlertDialog.Builder(obj)
-//                    .setTitle("Gifting Coin")
-//                    .setCancelable(true)
-//                    .setView(R.layout.gift_layout);
-//
-//            builder.setPositiveButton("Send Gift", (dialog, which) -> {
-//                AlertDialog test = (AlertDialog) dialog;
-//                EditText userinput = test.findViewById(R.id.emailID);
-//                        String giftEmail = userinput.getText().toString();
-//                giftCoin(goldValue,userEmail,giftEmail,coin.id,position);
-//
-//            });
-//            builder.setNegativeButton("Cancel", (dialog, which) -> {
-//            });
-//            builder.create().show();
-//        });
 
     }
 

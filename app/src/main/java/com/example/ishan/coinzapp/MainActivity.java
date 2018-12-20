@@ -19,8 +19,11 @@ import android.content.Intent;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.FirebaseFirestore;
 import java.util.HashMap;
+import java.util.Objects;
+
 import timber.log.Timber;
 
+@SuppressWarnings("ALL")
 public class MainActivity extends AppCompatActivity implements View.OnClickListener {
 
     private Button buttonRegister;
@@ -45,9 +48,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         }
     }
 
-
-
-
+    /**
+     * Method to check if the device has active internet connection*/
     public boolean haveNetworkConnection() {
         boolean haveConnectedWifi = false;
         boolean haveConnectedMobile = false;
@@ -79,13 +81,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             startActivity(new Intent(Settings.ACTION_WIFI_SETTINGS));
             networkCheck = haveNetworkConnection();
         }
-//        if (!networkCheck ){
-//            Toast.makeText(getBaseContext(), "Please connect to a hotspot", Toast.LENGTH_LONG).show();
-//            startActivity(new Intent(Settings.ACTION_DATA_ROAMING_SETTINGS));
-//            networkCheck = haveNetworkConnection();
-//        }
 
         firebaseAuth =  FirebaseAuth.getInstance();
+
 
         //if getCurrentUser does not returns null
         if(firebaseAuth.getCurrentUser() != null){
@@ -99,14 +97,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
         // init Views
         buttonRegister =  findViewById(R.id.buttonRegister);
-
         progressDialog = new ProgressDialog(this);
-
         editTextEmail =  findViewById(R.id.editTextEmail);
         editTextPassword =  findViewById(R.id.editTextPassword);
-
         textViewSignIn = findViewById(R.id.textViewSignIn);
-
         buttonRegister.setOnClickListener(this);
         textViewSignIn.setOnClickListener(this);
 
@@ -137,6 +131,11 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         progressDialog.setMessage("Registering User");
         progressDialog.show();
 
+        /*
+         * Setting up the initial user account with a gold bank, Spare gold,
+         * LastDownloadDate and Distance covered
+         * */
+
         firebaseAuth.createUserWithEmailAndPassword(email,password)
                 .addOnCompleteListener(this, task -> {
                     if(task.isSuccessful())
@@ -148,7 +147,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                         info.put("LastDownloadDate", "yyyy/mm/dd");
                         info.put("Distance",0.0);
 
-                        db.collection("Users").document(user.getEmail())
+                        db.collection("Users").document(Objects.requireNonNull(user.getEmail()))
                                 .set(info)
                                 .addOnSuccessListener(aVoid -> Timber.d("Gold Bank initialised "))
                                 .addOnFailureListener(e -> Timber.tag(TAG).w(e, "Error, Gold Bank NOT initialised"));

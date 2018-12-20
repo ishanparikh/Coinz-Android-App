@@ -109,10 +109,10 @@ public class MainActivityTest_SignInRegisteredUser {
                                                 0)),
                                 1),
                         isDisplayed()));
-        appCompatEditText5.perform(replaceText("man@test.com"));
+        appCompatEditText5.perform(replaceText("test@email.com"));
 
         ViewInteraction appCompatEditText6 = onView(
-                allOf(withId(R.id.editTextEmail), withText("man@test.com"),
+                allOf(withId(R.id.editTextEmail), withText("test@email.com"),
                         childAtPosition(
                                 allOf(withId(R.id.linearLayout),
                                         childAtPosition(
@@ -223,7 +223,7 @@ public class MainActivityTest_SignInRegisteredUser {
                                                 0)),
                                 1),
                         isDisplayed()));
-        appCompatEditText10.perform(replaceText("man@test.com"), closeSoftKeyboard());
+        appCompatEditText10.perform(replaceText("test@email.com"), closeSoftKeyboard());
 
         ViewInteraction appCompatEditText11 = onView(
                 allOf(withId(R.id.editTextPassword),

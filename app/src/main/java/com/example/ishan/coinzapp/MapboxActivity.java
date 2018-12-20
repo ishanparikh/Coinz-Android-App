@@ -13,10 +13,7 @@ import android.util.Log;
 import android.view.View;
 import android.widget.TextView;
 import android.widget.Toast;
-import com.google.android.gms.tasks.OnCompleteListener;
-import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
-import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.DocumentSnapshot;
@@ -56,6 +53,7 @@ import java.util.concurrent.ExecutionException;
 import timber.log.Timber;
 
 
+@SuppressWarnings("ALL")
 public class MapboxActivity extends AppCompatActivity implements OnMapReadyCallback,
         MapboxMap.OnMapClickListener,View.OnClickListener,
         LocationEngineListener, PermissionsListener {
@@ -91,12 +89,12 @@ public class MapboxActivity extends AppCompatActivity implements OnMapReadyCallb
 
     public class NotLoggingTree extends Timber.Tree {
         @Override
-        protected void log(final int priority, final String tag, final String message, final Throwable throwable) {
+        protected void log(final int priority, final String tag, @NonNull final String message, final Throwable throwable) {
 
         }
     }
 
-    /*
+    /**
     * Render Map is called whenever the Mapbox map needs to be rendered
     * This happens when:
     * 1. Coin is picked up - PickUpCoin
@@ -176,8 +174,10 @@ public class MapboxActivity extends AppCompatActivity implements OnMapReadyCallb
         }
     }
 
-/*
-* */
+    /**
+     * Method is used if a user has already logged in and loaded the daliy coin list
+     * Reads from firebase, Calls render map with uncollected coins
+     */
     public void getAtivatedMapList(String emailID){
         db.collection("Users").document(Objects.requireNonNull(emailID)).collection("DailyCoinList")
                 .get()
@@ -185,9 +185,7 @@ public class MapboxActivity extends AppCompatActivity implements OnMapReadyCallb
                     if (task.isSuccessful()) {
                         for (QueryDocumentSnapshot document : Objects.requireNonNull(task.getResult())) {
                             Timber.d(document.getId() + " => " + document.getData());
-
                             Map loc = (Map) document.get("loc");
-
                             TodaysMap activated = new TodaysMap(Objects.requireNonNull(document.get("date")).toString(),
                                     Objects.requireNonNull(document.get("currency")).toString(),
                                     Objects.requireNonNull(document.get("id")).toString(),
@@ -206,6 +204,14 @@ public class MapboxActivity extends AppCompatActivity implements OnMapReadyCallb
 
     }
 
+    /**
+     * Sets the exchange rates for the current day, values taken from JSON file
+     * @param emailID
+     * @param d2g
+     * @param q2g
+     * @param s2g
+     * @param p2g
+     */
     public void setExchangeRates(String emailID,String d2g,String q2g,String s2g,String p2g){
 
         HashMap<String, Object> exchange = new HashMap<>();
@@ -220,10 +226,12 @@ public class MapboxActivity extends AppCompatActivity implements OnMapReadyCallb
                 .addOnFailureListener(e -> Timber.w(e, "Error uploading exchange rate"));
     }
 
+    /**
+     * Cruial method to check if a particular user has already downloaded the current days map for his account
+     * Done on Firetore to allow users to play across devices
+     * @param emailID
+     */
     public void getUserDownloadDate(String emailID){
-        SharedPreferences settings = getSharedPreferences(preferencesFile, Context.MODE_PRIVATE);
-        // We need an Editor object to make preference changes.
-        SharedPreferences.Editor editor = settings.edit();
 
         db.collection("Users").document(emailID)
                 .get().addOnCompleteListener(task -> {
@@ -235,10 +243,9 @@ public class MapboxActivity extends AppCompatActivity implements OnMapReadyCallb
                             assert usrDD != null;
                             // if new day, then
                             if(!usrDD.equals(date)){
-
+                                // User has not played on current day, download today's map
                                 renderMap(todaysMapList);
                                 pushDailyCoinList();
-
                                 HashMap<String, Object> bc = new HashMap<>();
                                 bc.put("BankCounter", 0);
                                 db.collection("Users").document(Objects.requireNonNull(user.getEmail()))
@@ -248,13 +255,6 @@ public class MapboxActivity extends AppCompatActivity implements OnMapReadyCallb
                                             setUserDownloadDate(emailID);
                                         })
                                         .addOnFailureListener(e -> Timber.tag(tag).w(e, "Bank counter NOT created for new day"));
-                                editor.putString("DolrToGold", DolrToGold);
-                                editor.putString("PenyToGold", PenyToGold);
-                                editor.putString("QuidToGold", QuidToGold);
-                                editor.putString("ShilToGold", ShilToGold);
-                                editor.apply();
-//                                setExchangeRates( emailID,DolrToGold,QuidToGold,ShilToGold,PenyToGold);
-
                                 Timber.tag(tag).w("Daily Map Downloaded" + downloadDate + "\t" + date);
 
                             }else {
@@ -293,24 +293,26 @@ public class MapboxActivity extends AppCompatActivity implements OnMapReadyCallb
 
     public void getDistanceWalked(String emailID){
         db.collection("Users").document(emailID)
-                .get().addOnCompleteListener(new OnCompleteListener<DocumentSnapshot>() {
-            @Override
-            public void onComplete(@NonNull Task<DocumentSnapshot> task) {
-                if (task.isSuccessful()) {
-                    DocumentSnapshot document = task.getResult();
-                    if (document.exists()) {
-                        distWalked = document.getDouble("Distance");
-                        Timber.d("DocumentSnapshot data: %s", document.getData());
+                .get().addOnCompleteListener(task -> {
+                    if (task.isSuccessful()) {
+                        DocumentSnapshot document = task.getResult();
+                        assert document != null;
+                        if (document.exists()) {
+                            distWalked = document.getDouble("Distance");
+                            Timber.d("DocumentSnapshot data: %s", document.getData());
+                        } else {
+                            Timber.d("No such document");
+                        }
                     } else {
-                        Timber.d("No such document");
+                        Timber.d(task.getException(), "get failed with ");
                     }
-                } else {
-                    Timber.d(task.getException(), "get failed with ");
-                }
-            }
-        });
+                });
     }
 
+    /**
+     * Updates wallet when new coins are picked up
+     * @param coinID
+     */
     public void updateWallet(String coinID){
         //Add to FireStore
         TodaysMap newCoin = wallet.get(coinID);
@@ -320,6 +322,10 @@ public class MapboxActivity extends AppCompatActivity implements OnMapReadyCallb
                 .addOnFailureListener(e -> Timber.tag(tag).w(e, "Error uploading coin to firestore"));
     }
 
+    /**
+     * Updates firestore database by removing collected coins
+     * @param coinID
+     */
     public void updateDailyCoinList(String coinID){
 
         db.collection("Users").document(Objects.requireNonNull(user.getEmail())).collection("DailyCoinList").document(coinID)
@@ -329,6 +335,9 @@ public class MapboxActivity extends AppCompatActivity implements OnMapReadyCallb
 
     }
 
+    /**
+     * updates user's database with new day's coin list
+     */
     public void pushDailyCoinList(){
         for (String i : todaysMapList.keySet()){
             TodaysMap newCoin = todaysMapList.get(i);
@@ -345,17 +354,13 @@ public class MapboxActivity extends AppCompatActivity implements OnMapReadyCallb
         if(view == WalletIcon){
             Toast.makeText(MapboxActivity.this,"WalletIcon",Toast.LENGTH_SHORT).show();
             startActivity(new Intent(this, WalletActivity.class));
-//
 
         }
 
         if(view == HomeIcon)
         {
             Toast.makeText(MapboxActivity.this,"HomeIcon ",Toast.LENGTH_SHORT).show();
-//            startActivity(new Intent(this, ProfileActivity.class));
             Intent intent = new Intent(MapboxActivity.this, ProfileActivity.class);
-            Timber.d("Distance History is :" + distWalked);
-            intent.putExtra("Distance",distWalked);
             startActivity(intent);
         }
 
@@ -380,32 +385,35 @@ public class MapboxActivity extends AppCompatActivity implements OnMapReadyCallb
         HomeIcon.setOnClickListener(this);
         WalletIcon.setOnClickListener(this);
         user = FirebaseAuth.getInstance().getCurrentUser();
+        assert user != null;
         getDistanceWalked(user.getEmail());
-        Timber.d("Distance History is :" + distWalked);
+        Timber.d("Distance History is :%s", distWalked);
 
     }
 
 
-
+    @SuppressLint("SetTextI18n")
     @Override
     public void onMapReady(MapboxMap mapboxMap) {
 
         if (mapboxMap == null) {
             Timber.d("[onMapReady] mapBox is null");
         }
-            // Check if Shared Preferences is working
-            SharedPreferences settings = getSharedPreferences(preferencesFile, Context.MODE_PRIVATE);
-            Log.d(tag,settings.getString("lastDownloadDate", ""));
 
             map = mapboxMap;
+        if (map != null) {
             map.getUiSettings().setCompassEnabled(true);
             map.getUiSettings().setZoomControlsEnabled(true);
+        }
+
             // Make location information available
             enableLocation();
             distanceCovered.setText("Distance Covered is: \n" + Math.round(distWalked) +"m");
             String pattern = "yyyy/MM/dd";
+            // setting the pattern for date
             @SuppressLint("SimpleDateFormat") SimpleDateFormat simpleDateFormat = new SimpleDateFormat(pattern);
             date = simpleDateFormat.format(new Date());
+            //creating url to download map info
             String url = "http://homepages.inf.ed.ac.uk/stg/coinz/" + date + "/coinzmap.geojson";
             Timber.d(url);
             String mapLink = null;
@@ -418,7 +426,7 @@ public class MapboxActivity extends AppCompatActivity implements OnMapReadyCallb
                 Timber.d("Failed to build mapLink");
             }
 
-            // Get Rates
+            // Get Rates from file
             try {
                 JSONObject rateObj =  new JSONObject(mapLink).getJSONObject("rates");
                 ShilToGold = (rateObj.get("SHIL").toString());
@@ -434,7 +442,7 @@ public class MapboxActivity extends AppCompatActivity implements OnMapReadyCallb
             assert mapLink != null;
             FeatureCollection featureCollection = FeatureCollection.fromJson(mapLink);
             List<Feature> features = featureCollection.features();
-
+            // Parsing JSON file for Coin infomation
             assert features != null;
             for (Feature f : features) {
 
@@ -500,6 +508,7 @@ public class MapboxActivity extends AppCompatActivity implements OnMapReadyCallb
         locationEngine.requestLocationUpdates();
     }
 
+    @SuppressLint({"LogNotTimber", "SetTextI18n"})
     @Override
     public void onLocationChanged(Location location) {
         if (location != null) {
@@ -608,9 +617,7 @@ public class MapboxActivity extends AppCompatActivity implements OnMapReadyCallb
         if (locationEngine != null) {
             locationEngine.deactivate();
         }
-
         mapView.onDestroy();
-
     }
 
     @Override

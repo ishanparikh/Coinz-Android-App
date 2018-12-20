@@ -10,17 +10,14 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
-
-import android.support.annotation.NonNull;
-
-
-import com.google.android.gms.tasks.OnCompleteListener;
-import com.google.android.gms.tasks.Task;
-import com.google.firebase.auth.AuthResult;
 import com.google.firebase.auth.FirebaseAuth;
-
 import timber.log.Timber;
 
+@SuppressWarnings("ALL")
+
+/**
+ * Activity for a registered user to log into app
+ */
 public class LogInActivity extends AppCompatActivity implements View.OnClickListener{
 
     //defining views
@@ -67,9 +64,7 @@ public class LogInActivity extends AppCompatActivity implements View.OnClickList
         editTextPassword = findViewById(R.id.editTextPassword);
         buttonSignIn =  findViewById(R.id.buttonSignin);
         textViewSignup  =  findViewById(R.id.textViewSignUp);
-
         progressDialog = new ProgressDialog(this);
-
         //attaching click listener
         buttonSignIn.setOnClickListener(this);
         textViewSignup.setOnClickListener(this);

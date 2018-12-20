@@ -3,6 +3,7 @@ package com.example.ishan.coinzapp;
 
 import com.mapbox.mapboxsdk.geometry.LatLng;
 
+@SuppressWarnings("ALL")
 public class TodaysMap {
 
     public String date;
@@ -20,5 +21,5 @@ public class TodaysMap {
         symbol = sym;
 
     }
-    TodaysMap(){};
+    TodaysMap(){}
 }

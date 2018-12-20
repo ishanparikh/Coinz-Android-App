@@ -1,6 +1,9 @@
 package com.example.ishan.coinzapp;
 
 
+/**
+ * Class for individual coins
+ */
 public class Wallet {
     String date;
     String currency;

@@ -12,6 +12,10 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.stream.Collectors;
 
+/**
+ * Class used to help parse the JSON file
+ */
+
     public class DownloadFileTask extends AsyncTask<String, Void, String> {
         @Override
         protected String doInBackground(String... urls){
@@ -21,13 +25,10 @@ import java.util.stream.Collectors;
                 return "Unable to load content. Check your network connection";
             }
         }
-
-
         private String loadFileFromNetwork(String urlString) throws IOException {
             return readStream(downloadUrl(new URL(urlString)));
 
         }
-
 
         // Given a string representation of a URL, sets up a connection and gets an input stream.
         private InputStream downloadUrl(URL url) throws IOException {
@@ -42,10 +43,7 @@ import java.util.stream.Collectors;
 
         @NonNull
         private String readStream(InputStream stream) {
-
-
             return new BufferedReader(new InputStreamReader(stream)).lines().collect(Collectors.joining("\n"));
-
         }
 
         @Override
@@ -53,4 +51,4 @@ import java.util.stream.Collectors;
             super.onPostExecute(result);
             new DownloadCompleteRunner().downloadComplete(result);
         }
-    } // end class DownloadFileTask
+    }

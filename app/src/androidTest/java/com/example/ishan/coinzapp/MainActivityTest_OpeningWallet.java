@@ -86,7 +86,7 @@ public class MainActivityTest_OpeningWallet {
                                                 0)),
                                 1),
                         isDisplayed()));
-        appCompatEditText2.perform(replaceText("man@test.com"), closeSoftKeyboard());
+        appCompatEditText2.perform(replaceText("test@email.com"), closeSoftKeyboard());
 
         ViewInteraction appCompatEditText3 = onView(
                 allOf(withId(R.id.editTextPassword),
