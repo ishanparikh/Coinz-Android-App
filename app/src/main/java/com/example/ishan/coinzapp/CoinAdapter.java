@@ -236,14 +236,14 @@ public class CoinAdapter extends RecyclerView.Adapter<CoinAdapter.MyViewHolder> 
                                     storeLoc.setText("Storing In: Bank");
                                     coinsLeft.setText("Coins Banked: "+(bankCounter));
                                 }
-                                if(bankCounter > 25 && gift){
+                                if(bankCounter >= 25 && gift){
 //                                    giftCoin(gold,);
                                     giftCoin(goldValue,emailID,giftID,coinID,pos);
                                     storeLoc.setText("Daily Quota Reached");
                                     coinsLeft.setText("HODL or Gift Now");
 
                                 }
-                                if(bankCounter <= 25 && gift){
+                                if(bankCounter < 25 && gift){
                                     Toast.makeText(obj, "Can only gift after exceeding daily quota", Toast.LENGTH_SHORT).show();
 
                                 }

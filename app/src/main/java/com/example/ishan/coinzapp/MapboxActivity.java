@@ -442,7 +442,7 @@ public class MapboxActivity extends AppCompatActivity implements OnMapReadyCallb
             assert mapLink != null;
             FeatureCollection featureCollection = FeatureCollection.fromJson(mapLink);
             List<Feature> features = featureCollection.features();
-            // Parsing JSON file for Coin infomation
+            // Parsing JSON file for Coin information
             assert features != null;
             for (Feature f : features) {
 
